@@ -22,7 +22,7 @@ from robin_stocks.robinhood.urls import *
 #         sys.stdout.write('\b'*(len(marketString)+1))
 
 @login_required
-async def get_aggregate_positions(info=None, account_number=None):
+async def get_aggregate_positions(client, info=None, account_number=None):
     """Collapses all option orders for a stock into a single dictionary.
 
     :param info: Will filter the results to get a specific value.
@@ -32,11 +32,11 @@ async def get_aggregate_positions(info=None, account_number=None):
 
     """
     url = aggregate_url(account_number=account_number)
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
     return(filter_data(data, info))
 
 @login_required
-async def get_aggregate_open_positions(info=None, account_number=None):
+async def get_aggregate_open_positions(client, info=None, account_number=None):
     """Collapses all open option positions for a stock into a single dictionary.
 
     :param info: Will filter the results to get a specific value.
@@ -47,12 +47,12 @@ async def get_aggregate_open_positions(info=None, account_number=None):
     """
     url = aggregate_url(account_number=account_number)
     payload = {'nonzero': 'True'}
-    data = await request_get(url, 'pagination', payload)
+    data = await request_get(client, url, 'pagination', payload)
     return(filter_data(data, info))
 
 
 @login_required
-async def get_market_options(info=None):
+async def get_market_options(client, info=None):
     """Returns a list of all options.
 
     :param info: Will filter the results to get a specific value.
@@ -62,13 +62,13 @@ async def get_market_options(info=None):
 
     """
     url = option_orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
 
     return(filter_data(data, info))
 
 
 @login_required
-async def get_all_option_positions(info=None, account_number=None):
+async def get_all_option_positions(client, info=None, account_number=None):
     """Returns all option positions ever held for the account.
 
     :param info: Will filter the results to get a specific value.
@@ -78,12 +78,12 @@ async def get_all_option_positions(info=None, account_number=None):
 
     """
     url = option_positions_url(account_number=account_number)
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-async def get_open_option_positions(account_number=None, info=None):
+async def get_open_option_positions(client, account_number=None, info=None):
     """Returns all open option positions for the account.
     
     :param acccount_number: the robinhood account number.
@@ -96,12 +96,12 @@ async def get_open_option_positions(account_number=None, info=None):
     """
     url = option_positions_url(account_number=account_number)
     payload = {'nonzero': 'True'}
-    data = await request_get(url, 'pagination', payload)
+    data = await request_get(client, url, 'pagination', payload)
 
     return(filter_data(data, info))
 
 
-async def get_chains(symbol, info=None):
+async def get_chains(client, symbol, info=None):
     """Returns the chain information of an option.
 
     :param symbol: The ticker of the stock.
@@ -118,13 +118,13 @@ async def get_chains(symbol, info=None):
         print(message, file=get_output())
         return None
 
-    url = await chains_url(symbol)
-    data = await request_get(url)
+    url = await chains_url(client, symbol)
+    data = await request_get(client, url)
 
     return(filter_data(data, info))
 
 @login_required
-async def find_tradable_options(symbol, expirationDate=None, strikePrice=None, optionType=None, info=None):
+async def find_tradable_options(client, symbol, expirationDate=None, strikePrice=None, optionType=None, info=None):
     """Returns a list of all available options for a stock.
 
     :param symbol: The ticker of the stock.
@@ -148,7 +148,7 @@ async def find_tradable_options(symbol, expirationDate=None, strikePrice=None, o
         return [None]
 
     url = option_instruments_url()
-    if not await id_for_chain(symbol):
+    if not await id_for_chain(client, symbol):
         print("Symbol {} is not valid for finding options.".format(symbol), file=get_output())
         return [None]
 
@@ -163,11 +163,11 @@ async def find_tradable_options(symbol, expirationDate=None, strikePrice=None, o
     if optionType:
         payload['type'] = optionType
 
-    data = await request_get(url, 'pagination', payload)
+    data = await request_get(client, url, 'pagination', payload)
     return(filter_data(data, info))
 
 @login_required
-async def find_options_by_expiration(inputSymbols, expirationDate, optionType=None, info=None):
+async def find_options_by_expiration(client, inputSymbols, expirationDate, optionType=None, info=None):
     """Returns a list of all the option orders that match the seach parameters
 
     :param inputSymbols: The ticker of either a single stock or a list of stocks.
@@ -192,11 +192,11 @@ async def find_options_by_expiration(inputSymbols, expirationDate, optionType=No
 
     data = []
     for symbol in symbols:
-        allOptions = await find_tradable_options(symbol, expirationDate, None, optionType, None)
+        allOptions = await find_tradable_options(client, symbol, expirationDate, None, optionType, None)
         filteredOptions = [item for item in allOptions if item.get("expiration_date") == expirationDate]
 
         for item in filteredOptions:
-            marketData = await get_option_market_data_by_id(item['id'])
+            marketData = await get_option_market_data_by_id(client, item['id'])
             if marketData:
                 item.update(marketData[0])
             # write_spinner()
@@ -206,7 +206,7 @@ async def find_options_by_expiration(inputSymbols, expirationDate, optionType=No
     return(filter_data(data, info))
 
 @login_required
-async def find_options_by_strike(inputSymbols, strikePrice, optionType=None, info=None):
+async def find_options_by_strike(client, inputSymbols, strikePrice, optionType=None, info=None):
     """Returns a list of all the option orders that match the seach parameters
 
     :param inputSymbols: The ticker of either a single stock or a list of stocks.
@@ -231,10 +231,10 @@ async def find_options_by_strike(inputSymbols, strikePrice, optionType=None, inf
 
     data = []
     for symbol in symbols:
-        filteredOptions = await find_tradable_options(symbol, None, strikePrice, optionType, None)
+        filteredOptions = await find_tradable_options(client, symbol, None, strikePrice, optionType, None)
 
         for item in filteredOptions:
-            marketData = await get_option_market_data_by_id(item['id'])
+            marketData = await get_option_market_data_by_id(client, item['id'])
             if marketData:
                 item.update(marketData[0])
             # write_spinner()
@@ -244,7 +244,7 @@ async def find_options_by_strike(inputSymbols, strikePrice, optionType=None, inf
     return(filter_data(data, info))
 
 @login_required
-async def find_options_by_expiration_and_strike(inputSymbols, expirationDate, strikePrice, optionType=None, info=None):
+async def find_options_by_expiration_and_strike(client, inputSymbols, expirationDate, strikePrice, optionType=None, info=None):
     """Returns a list of all the option orders that match the seach parameters
 
     :param inputSymbols: The ticker of either a single stock or a list of stocks.
@@ -271,11 +271,11 @@ async def find_options_by_expiration_and_strike(inputSymbols, expirationDate, st
 
     data = []
     for symbol in symbols:
-        allOptions = await find_tradable_options(symbol, expirationDate, strikePrice, optionType, None)
+        allOptions = await find_tradable_options(client, symbol, expirationDate, strikePrice, optionType, None)
         filteredOptions = [item for item in allOptions if item.get("expiration_date") == expirationDate]
 
         for item in filteredOptions:
-            marketData = await get_option_market_data_by_id(item['id'])
+            marketData = await get_option_market_data_by_id(client, item['id'])
             if marketData:
                 item.update(marketData[0])
             # write_spinner()
@@ -285,7 +285,7 @@ async def find_options_by_expiration_and_strike(inputSymbols, expirationDate, st
     return filter_data(data, info)
 
 @login_required
-async def find_options_by_specific_profitability(inputSymbols, expirationDate=None, strikePrice=None, optionType=None, typeProfit="chance_of_profit_short", profitFloor=0.0, profitCeiling=1.0, info=None):
+async def find_options_by_specific_profitability(client, inputSymbols, expirationDate=None, strikePrice=None, optionType=None, typeProfit="chance_of_profit_short", profitFloor=0.0, profitCeiling=1.0, info=None):
     """Returns a list of option market data for several stock tickers that match a range of profitability.
 
     :param inputSymbols: May be a single stock ticker or a list of stock tickers.
@@ -316,12 +316,12 @@ async def find_options_by_specific_profitability(inputSymbols, expirationDate=No
         typeProfit = "chance_of_profit_short"
 
     for symbol in symbols:
-        tempData = await find_tradable_options(symbol, expirationDate, strikePrice, optionType, info=None)
+        tempData = await find_tradable_options(client, symbol, expirationDate, strikePrice, optionType, info=None)
         for option in tempData:
             if expirationDate and option.get("expiration_date") != expirationDate:
                 continue
 
-            market_data = await get_option_market_data_by_id(option['id'])
+            market_data = await get_option_market_data_by_id(client, option['id'])
             
             if len(market_data):
                 option.update(market_data[0])
@@ -337,7 +337,7 @@ async def find_options_by_specific_profitability(inputSymbols, expirationDate=No
     return(filter_data(data, info))
 
 @login_required
-async def get_option_market_data_by_id(id, info=None):
+async def get_option_market_data_by_id(client, id, info=None):
     """Returns the option market data for a stock, including the greeks,
     open interest, change of profit, and adjusted mark price.
 
@@ -349,7 +349,7 @@ async def get_option_market_data_by_id(id, info=None):
     If info parameter is provided, the value of the key that matches info is extracted.
 
     """
-    instrument = await get_option_instrument_data_by_id(id)
+    instrument = await get_option_instrument_data_by_id(client, id)
     if instrument is None:
       # e.g. 503 Server Error: Service Unavailable for url: https://api.robinhood.com/options/instruments/d1058013-09a2-4063-b6b0-92717e17d0c0/
       return None  # just return None which the caller can easily check; do NOT use faked empty data, it will only cause future problem
@@ -358,12 +358,12 @@ async def get_option_market_data_by_id(id, info=None):
           "instruments" : instrument['url']
       }
       url = marketdata_options_url()
-      data = await request_get(url, 'results', payload)
+      data = await request_get(client, url, 'results', payload)
 
     return(filter_data(data, info))
 
 @login_required
-async def get_option_market_data(inputSymbols, expirationDate, strikePrice, optionType, info=None):
+async def get_option_market_data(client, inputSymbols, expirationDate, strikePrice, optionType, info=None):
     """Returns the option market data for the stock option, including the greeks,
     open interest, change of profit, and adjusted mark price.
 
@@ -391,14 +391,14 @@ async def get_option_market_data(inputSymbols, expirationDate, strikePrice, opti
 
     data = []
     for symbol in symbols:
-        optionID = await id_for_option(symbol, expirationDate, strikePrice, optionType)
-        marketData = await get_option_market_data_by_id(optionID)
+        optionID = await id_for_option(client, symbol, expirationDate, strikePrice, optionType)
+        marketData = await get_option_market_data_by_id(client, optionID)
         data.append(marketData)
 
     return(filter_data(data, info))
 
 
-async def get_option_instrument_data_by_id(id, info=None):
+async def get_option_instrument_data_by_id(client, id, info=None):
     """Returns the option instrument information.
 
     :param id: The id of the stock.
@@ -410,11 +410,11 @@ async def get_option_instrument_data_by_id(id, info=None):
 
     """
     url = option_instruments_url(id)
-    data = await request_get(url)
+    data = await request_get(client, url)
     return(filter_data(data, info))
 
 
-async def get_option_instrument_data(symbol, expirationDate, strikePrice, optionType, info=None):
+async def get_option_instrument_data(client, symbol, expirationDate, strikePrice, optionType, info=None):
     """Returns the option instrument data for the stock option.
 
     :param symbol: The ticker of the stock.
@@ -438,14 +438,14 @@ async def get_option_instrument_data(symbol, expirationDate, strikePrice, option
         print(message, file=get_output())
         return [None]
 
-    optionID = await id_for_option(symbol, expirationDate, strikePrice, optionType)
+    optionID = await id_for_option(client, symbol, expirationDate, strikePrice, optionType)
     url = option_instruments_url(optionID)
-    data = await request_get(url)
+    data = await request_get(client, url)
 
     return(filter_data(data, info))
 
 
-async def get_option_historicals(symbol, expirationDate, strikePrice, optionType, interval='hour', span='week', bounds='regular', info=None):
+async def get_option_historicals(client, symbol, expirationDate, strikePrice, optionType, interval='hour', span='week', bounds='regular', info=None):
     """Returns the data that is used to make the graphs.
 
     :param symbol: The ticker of the stock.
@@ -490,13 +490,13 @@ async def get_option_historicals(symbol, expirationDate, strikePrice, optionType
         print('ERROR: Bounds must be "extended","regular",or "trading"', file=get_output())
         return([None])
 
-    optionID = await id_for_option(symbol, expirationDate, strikePrice, optionType)
+    optionID = await id_for_option(client, symbol, expirationDate, strikePrice, optionType)
 
     url = option_historicals_url(optionID)
     payload = {'span': span,
                'interval': interval,
                'bounds': bounds}
-    data = await request_get(url, 'regular', payload)
+    data = await request_get(client, url, 'regular', payload)
     if (data == None or data == [None]):
         return data
 

@@ -4,7 +4,7 @@ from robin_stocks.robinhood.urls import *
 
 
 @login_required
-async def load_account_profile(account_number=None, info=None, dataType="indexzero"):
+async def load_account_profile(client, account_number=None, info=None, dataType="indexzero"):
     """Gets the information associated with the accounts profile,including day
     trading information and cash being held by Robinhood.
 
@@ -67,14 +67,14 @@ async def load_account_profile(account_number=None, info=None, dataType="indexze
     """
     url = account_profile_url(account_number)
     if account_number is not None:
-         data = await request_get(url)
+         data = await request_get(client, url)
     else:
-        data = await request_get(url, dataType)
+        data = await request_get(client, url, dataType)
     return(filter_data(data, info))
 
 
 @login_required
-async def load_basic_profile(info=None):
+async def load_basic_profile(client, info=None):
     """Gets the information associated with the personal profile,
     such as phone number, city, marital status, and date of birth.
 
@@ -100,12 +100,12 @@ async def load_basic_profile(info=None):
 
     """
     url = basic_profile_url()
-    data = await request_get(url)
+    data = await request_get(client, url)
     return(filter_data(data, info))
 
 
 @login_required
-async def load_investment_profile(info=None):
+async def load_investment_profile(client, info=None):
     """Gets the information associated with the investment profile.
     These are the answers to the questionaire you filled out when you made your profile.
 
@@ -135,12 +135,12 @@ async def load_investment_profile(info=None):
 
     """
     url = investment_profile_url()
-    data = await request_get(url)
+    data = await request_get(client, url)
     return(filter_data(data, info))
 
 
 @login_required
-async def load_portfolio_profile(account_number=None, info=None):
+async def load_portfolio_profile(client, account_number=None, info=None):
     """Gets the information associated with the portfolios profile,
     such as withdrawable amount, market value of account, and excess margin.
 
@@ -175,14 +175,14 @@ async def load_portfolio_profile(account_number=None, info=None):
     """
     url = portfolio_profile_url(account_number)
     if account_number is not None:
-        data = await request_get(url)
+        data = await request_get(client, url)
     else:
-        data = await request_get(url, 'indexzero')
+        data = await request_get(client, url, 'indexzero')
     return(filter_data(data, info))
 
 
 @login_required
-async def load_security_profile(info=None):
+async def load_security_profile(client, info=None):
     """Gets the information associated with the security profile.
 
     :param info: The name of the key whose value is to be returned from the function.
@@ -210,12 +210,12 @@ async def load_security_profile(info=None):
 
     """
     url = security_profile_url()
-    data = await request_get(url)
+    data = await request_get(client, url)
     return(filter_data(data, info))
 
 
 @login_required
-async def load_user_profile(info=None):
+async def load_user_profile(client, info=None):
     """Gets the information associated with the user profile,
     such as username, email, and links to the urls for other profiles.
 
@@ -238,5 +238,5 @@ async def load_user_profile(info=None):
 
     """
     url = user_profile_url()
-    data = await request_get(url)
+    data = await request_get(client, url)
     return(filter_data(data, info))

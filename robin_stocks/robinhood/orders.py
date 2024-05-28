@@ -8,7 +8,7 @@ from robin_stocks.robinhood.stocks import *
 from robin_stocks.robinhood.urls import *
 
 @login_required
-async def get_all_stock_orders(info=None):
+async def get_all_stock_orders(client, info=None):
     """Returns a list of all the orders that have been processed for the account.
 
     :param info: Will filter the results to get a specific value.
@@ -18,12 +18,12 @@ async def get_all_stock_orders(info=None):
 
     """
     url = orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-async def get_all_option_orders(info=None):
+async def get_all_option_orders(client, info=None):
     """Returns a list of all the option orders that have been processed for the account.
 
     :param info: Will filter the results to get a specific value.
@@ -33,12 +33,12 @@ async def get_all_option_orders(info=None):
 
     """
     url = option_orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-async def get_all_crypto_orders(info=None):
+async def get_all_crypto_orders(client, info=None):
     """Returns a list of all the crypto orders that have been processed for the account.
 
     :param info: Will filter the results to get a specific value.
@@ -48,12 +48,12 @@ async def get_all_crypto_orders(info=None):
 
     """
     url = crypto_orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-async def get_all_open_stock_orders(info=None, account_number=None):
+async def get_all_open_stock_orders(client, info=None, account_number=None):
     """Returns a list of all the orders that are currently open.
 
     :param info: Will filter the results to get a specific value.
@@ -63,7 +63,7 @@ async def get_all_open_stock_orders(info=None, account_number=None):
 
     """
     url = orders_url(account_number=account_number)
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
 
     data = [item for item in data if item['cancel'] is not None]
 
@@ -71,7 +71,7 @@ async def get_all_open_stock_orders(info=None, account_number=None):
 
 
 @login_required
-async def get_all_open_option_orders(info=None, account_number=None):
+async def get_all_open_option_orders(client, info=None, account_number=None):
     """Returns a list of all the orders that are currently open.
 
     :param info: Will filter the results to get a specific value.
@@ -81,7 +81,7 @@ async def get_all_open_option_orders(info=None, account_number=None):
 
     """
     url = option_orders_url(account_number=account_number)
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
 
     data = [item for item in data if item['cancel_url'] is not None]
 
@@ -89,7 +89,7 @@ async def get_all_open_option_orders(info=None, account_number=None):
 
 
 @login_required
-async def get_all_open_crypto_orders(info=None):
+async def get_all_open_crypto_orders(client, info=None):
     """Returns a list of all the crypto orders that have been processed for the account.
 
     :param info: Will filter the results to get a specific value.
@@ -99,7 +99,7 @@ async def get_all_open_crypto_orders(info=None):
 
     """
     url = crypto_orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
 
     data = [item for item in data if item['cancel_url'] is not None]
 
@@ -107,21 +107,21 @@ async def get_all_open_crypto_orders(info=None):
 
 
 @login_required
-async def get_stock_order_info(orderID):
+async def get_stock_order_info(client, orderID):
     """Returns the information for a single order.
 
-    :param orderID: The ID associated with the order. Can be found using await get_all_orders(info=None) or await get_all_orders(info=None).
+    :param orderID: The ID associated with the order. Can be found using await get_all_orders(client, info=None) or await get_all_orders(client, info=None).
     :type orderID: str
     :returns: Returns a list of dictionaries of key/value pairs for the order.
 
     """
     url = orders_url(orderID)
-    data = await request_get(url)
+    data = await request_get(client, url)
     return(data)
 
 
 @login_required
-async def get_option_order_info(order_id):
+async def get_option_order_info(client, order_id):
     """Returns the information for a single option order.
 
     :param order_id: The ID associated with the option order.
@@ -130,12 +130,12 @@ async def get_option_order_info(order_id):
 
     """
     url = option_orders_url(order_id)
-    data = await request_get(url)
+    data = await request_get(client, url)
     return data
 
 
 @login_required
-async def get_crypto_order_info(order_id):
+async def get_crypto_order_info(client, order_id):
     """Returns the information for a single crypto order.
 
     :param order_id: The ID associated with the option order.
@@ -144,12 +144,12 @@ async def get_crypto_order_info(order_id):
 
     """
     url = crypto_orders_url(order_id)
-    data = await request_get(url)
+    data = await request_get(client, url)
     return data
 
 
 @login_required
-async def find_stock_orders(**arguments):
+async def find_stock_orders(client, **arguments):
     """Returns a list of orders that match the keyword parameters.
 
     :param arguments: Variable length of keyword arguments. EX. find_orders(symbol='FB',cancel=None,quantity=1)
@@ -158,7 +158,7 @@ async def find_stock_orders(**arguments):
 
     """ 
     url = orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
 
     if (len(arguments) == 0):
         return(data)
@@ -191,16 +191,16 @@ async def find_stock_orders(**arguments):
 
 
 @login_required
-async def cancel_stock_order(orderID):
+async def cancel_stock_order(client, orderID):
     """Cancels a specific order.
 
-    :param orderID: The ID associated with the order. Can be found using await get_all_stock_orders(info=None).
+    :param orderID: The ID associated with the order. Can be found using await get_all_stock_orders(client, info=None).
     :type orderID: str
     :returns: Returns the order information for the order that was cancelled.
 
     """ 
     url = cancel_url(orderID)
-    data = await request_post(url)
+    data = await request_post(client, url)
 
     if data:
         print('Order '+str(orderID)+' cancelled', file=get_output())
@@ -208,16 +208,16 @@ async def cancel_stock_order(orderID):
 
 
 @login_required
-async def cancel_option_order(orderID):
+async def cancel_option_order(client, orderID):
     """Cancels a specific option order.
 
-    :param orderID: The ID associated with the order. Can be found using await get_all_option_orders(info=None).
+    :param orderID: The ID associated with the order. Can be found using await get_all_option_orders(client, info=None).
     :type orderID: str
     :returns: Returns the order information for the order that was cancelled.
 
     """ 
     url = option_cancel_url(orderID)
-    data = await request_post(url)
+    data = await request_post(client, url)
 
     if data:
         print('Order '+str(orderID)+' cancelled', file=get_output())
@@ -225,16 +225,16 @@ async def cancel_option_order(orderID):
 
 
 @login_required
-async def cancel_crypto_order(orderID):
+async def cancel_crypto_order(client, orderID):
     """Cancels a specific crypto order.
 
-    :param orderID: The ID associated with the order. Can be found using await get_all_crypto_orders(info=None).
+    :param orderID: The ID associated with the order. Can be found using await get_all_crypto_orders(client, info=None).
     :type orderID: str
     :returns: Returns the order information for the order that was cancelled.
 
     """ 
     url = crypto_cancel_url(orderID)
-    data = await request_post(url)
+    data = await request_post(client, url)
 
     if data:
         print('Order '+str(orderID)+' cancelled', file=get_output())
@@ -242,64 +242,64 @@ async def cancel_crypto_order(orderID):
 
 
 @login_required
-async def cancel_all_stock_orders():
+async def cancel_all_stock_orders(client):
     """Cancels all stock orders.
 
     :returns: The list of orders that were cancelled.
 
     """ 
     url = orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
 
     data = [item for item in data if item['cancel'] is not None]
 
     for item in data:
-        await request_post(item['cancel'])
+        await request_post(client, item['cancel'])
 
     print('All Stock Orders Cancelled', file=get_output())
     return(data)
 
 
 @login_required
-async def cancel_all_option_orders():
+async def cancel_all_option_orders(client):
     """Cancels all option orders.
 
     :returns: Returns the order information for the orders that were cancelled.
 
     """ 
     url = option_orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
 
     data = [item for item in data if item['cancel_url'] is not None]
 
     for item in data:
-        await request_post(item['cancel_url'])
+        await request_post(client, item['cancel_url'])
 
     print('All Option Orders Cancelled', file=get_output())
     return(data)
 
 
 @login_required
-async def cancel_all_crypto_orders():
+async def cancel_all_crypto_orders(client):
     """Cancels all crypto orders.
 
     :returns: Returns the order information for the orders that were cancelled.
 
     """ 
     url = crypto_orders_url()
-    data = await request_get(url, 'pagination')
+    data = await request_get(client, url, 'pagination')
 
     data = [item for item in data if item['cancel_url'] is not None]
 
     for item in data:
-        await request_post(item['cancel_url'])
+        await request_post(client, item['cancel_url'])
 
     print('All Crypto Orders Cancelled', file=get_output())
     return(data)
 
 
 @login_required
-async def order_buy_market(symbol, quantity, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_buy_market(client, symbol, quantity, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a market order to be executed immediately.
 
     :param symbol: The stock ticker of the stock to purchase.
@@ -320,11 +320,11 @@ async def order_buy_market(symbol, quantity, account_number=None, timeInForce='g
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "buy", None, None, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "buy", None, None, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_buy_fractional_by_quantity(symbol, quantity, account_number=None, timeInForce='gfd', extendedHours=False, jsonify=True):
+async def order_buy_fractional_by_quantity(client, symbol, quantity, account_number=None, timeInForce='gfd', extendedHours=False, jsonify=True):
     """Submits a market order to be executed immediately for fractional shares by specifying the amount that you want to trade.
     Good for share fractions up to 6 decimal places. Robinhood does not currently support placing limit, stop, or stop loss orders
     for fractional trades.
@@ -346,11 +346,11 @@ async def order_buy_fractional_by_quantity(symbol, quantity, account_number=None
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "buy", None, None, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "buy", None, None, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_buy_fractional_by_price(symbol, amountInDollars, account_number=None, timeInForce='gfd', extendedHours=False, jsonify=True, market_hours='regular_hours'):
+async def order_buy_fractional_by_price(client, symbol, amountInDollars, account_number=None, timeInForce='gfd', extendedHours=False, jsonify=True, market_hours='regular_hours'):
     """Submits a market order to be executed immediately for fractional shares by specifying the amount in dollars that you want to trade.
     Good for share fractions up to 6 decimal places. Robinhood does not currently support placing limit, stop, or stop loss orders
     for fractional trades.
@@ -377,14 +377,14 @@ async def order_buy_fractional_by_price(symbol, amountInDollars, account_number=
         return None
 
     # turn the money amount into decimal number of shares
-    price = next(iter(await get_latest_price(symbol, 'ask_price', extendedHours)), 0.00)
+    price = next(iter(await get_latest_price(client, symbol, 'ask_price', extendedHours)), 0.00)
     fractional_shares = 0 if (price == 0.00) else round_price(amountInDollars/float(price))
     
-    return await order(symbol, fractional_shares, "buy", None, None, account_number, timeInForce, extendedHours, jsonify, market_hours)
+    return await order(client, symbol, fractional_shares, "buy", None, None, account_number, timeInForce, extendedHours, jsonify, market_hours)
 
 
 @login_required
-async def order_buy_limit(symbol, quantity, limitPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_buy_limit(client, symbol, quantity, limitPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a limit order to be executed once a certain price is reached.
 
     :param symbol: The stock ticker of the stock to purchase.
@@ -407,11 +407,11 @@ async def order_buy_limit(symbol, quantity, limitPrice, account_number=None, tim
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "buy", limitPrice, None, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "buy", limitPrice, None, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_buy_stop_loss(symbol, quantity, stopPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_buy_stop_loss(client, symbol, quantity, stopPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a stop order to be turned into a market order once a certain stop price is reached.
 
     :param symbol: The stock ticker of the stock to purchase.
@@ -434,11 +434,11 @@ async def order_buy_stop_loss(symbol, quantity, stopPrice, account_number=None, 
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "buy", None, stopPrice, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "buy", None, stopPrice, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_buy_stop_limit(symbol, quantity, limitPrice, stopPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_buy_stop_limit(client, symbol, quantity, limitPrice, stopPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a stop order to be turned into a limit order once a certain stop price is reached.
 
     :param symbol: The stock ticker of the stock to purchase.
@@ -463,11 +463,11 @@ async def order_buy_stop_limit(symbol, quantity, limitPrice, stopPrice, account_
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "buy", limitPrice, stopPrice, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "buy", limitPrice, stopPrice, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_buy_trailing_stop(symbol, quantity, trailAmount, trailType='percentage', timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_buy_trailing_stop(client, symbol, quantity, trailAmount, trailType='percentage', timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a trailing stop buy order to be turned into a market order when traling stop price reached.
 
     :param symbol: The stock ticker of the stock to buy.
@@ -493,11 +493,11 @@ async def order_buy_trailing_stop(symbol, quantity, trailAmount, trailType='perc
     such as the order id, the state of order (queued, confired, filled, failed, canceled, etc.), \
     the price, and the quantity.
     """
-    return await order_trailing_stop(symbol, quantity, "buy", trailAmount, trailType, None, timeInForce, extendedHours, jsonify)
+    return await order_trailing_stop(client, symbol, quantity, "buy", trailAmount, trailType, None, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_sell_market(symbol, quantity, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_sell_market(client, symbol, quantity, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a market order to be executed immediately.
 
     :param symbol: The stock ticker of the stock to sell.
@@ -518,11 +518,11 @@ async def order_sell_market(symbol, quantity, account_number=None, timeInForce='
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "sell", None, None, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "sell", None, None, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_sell_fractional_by_quantity(symbol, quantity, account_number=None, timeInForce='gfd', priceType='bid_price', extendedHours=False, jsonify=True, market_hours='regular_hours'):
+async def order_sell_fractional_by_quantity(client, symbol, quantity, account_number=None, timeInForce='gfd', priceType='bid_price', extendedHours=False, jsonify=True, market_hours='regular_hours'):
     """Submits a market order to be executed immediately for fractional shares by specifying the amount that you want to trade.
     Good for share fractions up to 6 decimal places. Robinhood does not currently support placing limit, stop, or stop loss orders
     for fractional trades.
@@ -544,11 +544,11 @@ async def order_sell_fractional_by_quantity(symbol, quantity, account_number=Non
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "sell", None, None, account_number, timeInForce, extendedHours, jsonify, market_hours)
+    return await order(client, symbol, quantity, "sell", None, None, account_number, timeInForce, extendedHours, jsonify, market_hours)
 
 
 @login_required
-async def order_sell_fractional_by_price(symbol, amountInDollars, account_number=None, timeInForce='gfd', extendedHours=False, jsonify=True):
+async def order_sell_fractional_by_price(client, symbol, amountInDollars, account_number=None, timeInForce='gfd', extendedHours=False, jsonify=True):
     """Submits a market order to be executed immediately for fractional shares by specifying the amount in dollars that you want to trade.
     Good for share fractions up to 6 decimal places. Robinhood does not currently support placing limit, stop, or stop loss orders
     for fractional trades.
@@ -574,14 +574,14 @@ async def order_sell_fractional_by_price(symbol, amountInDollars, account_number
         print("ERROR: Fractional share price should meet minimum 1.00.", file=get_output())
         return None
     # turn the money amount into decimal number of shares
-    price = next(iter(await get_latest_price(symbol, 'bid_price', extendedHours)), 0.00)
+    price = next(iter(await get_latest_price(client, symbol, 'bid_price', extendedHours)), 0.00)
     fractional_shares = 0 if (price == 0.00) else round_price(amountInDollars/float(price))
 
-    return await order(symbol, fractional_shares, "sell", None, None, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, fractional_shares, "sell", None, None, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_sell_limit(symbol, quantity, limitPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_sell_limit(client, symbol, quantity, limitPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a limit order to be executed once a certain price is reached.
 
     :param symbol: The stock ticker of the stock to sell.
@@ -604,11 +604,11 @@ async def order_sell_limit(symbol, quantity, limitPrice, account_number=None, ti
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "sell", limitPrice, None, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "sell", limitPrice, None, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_sell_stop_loss(symbol, quantity, stopPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_sell_stop_loss(client, symbol, quantity, stopPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a stop order to be turned into a market order once a certain stop price is reached.
 
     :param symbol: The stock ticker of the stock to sell.
@@ -631,11 +631,11 @@ async def order_sell_stop_loss(symbol, quantity, stopPrice, account_number=None,
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "sell", None, stopPrice, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "sell", None, stopPrice, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_sell_stop_limit(symbol, quantity, limitPrice, stopPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_sell_stop_limit(client, symbol, quantity, limitPrice, stopPrice, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a stop order to be turned into a limit order once a certain stop price is reached.
 
     :param symbol: The stock ticker of the stock to sell.
@@ -660,11 +660,11 @@ async def order_sell_stop_limit(symbol, quantity, limitPrice, stopPrice, account
     the price, and the quantity.
 
     """ 
-    return await order(symbol, quantity, "sell", limitPrice, stopPrice, account_number, timeInForce, extendedHours, jsonify)
+    return await order(client, symbol, quantity, "sell", limitPrice, stopPrice, account_number, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_sell_trailing_stop(symbol, quantity, trailAmount, trailType='percentage', timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_sell_trailing_stop(client, symbol, quantity, trailAmount, trailType='percentage', timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a trailing stop sell order to be turned into a market order when traling stop price reached.
 
     :param symbol: The stock ticker of the stock to sell.
@@ -690,11 +690,11 @@ async def order_sell_trailing_stop(symbol, quantity, trailAmount, trailType='per
     such as the order id, the state of order (queued, confired, filled, failed, canceled, etc.), \
     the price, and the quantity.
     """
-    return await order_trailing_stop(symbol, quantity, "sell", trailAmount, trailType, None, timeInForce, extendedHours, jsonify)
+    return await order_trailing_stop(client, symbol, quantity, "sell", trailAmount, trailType, None, timeInForce, extendedHours, jsonify)
 
 
 @login_required
-async def order_trailing_stop(symbol, quantity, side, trailAmount, trailType='percentage', account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
+async def order_trailing_stop(client, symbol, quantity, side, trailAmount, trailType='percentage', account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True):
     """Submits a trailing stop order to be turned into a market order when traling stop price reached.
 
     :param symbol: The stock ticker of the stock to trade.
@@ -728,7 +728,7 @@ async def order_trailing_stop(symbol, quantity, side, trailAmount, trailType='pe
         print(message)
         return None
 
-    stock_price = round_price(await get_latest_price(symbol, extendedHours)[0])
+    stock_price = round_price(await get_latest_price(client, symbol, extendedHours)[0])
 
     # find stop price based on whether trailType is "amount" or "percentage" and whether its buy or sell
     percentage = 0
@@ -746,8 +746,8 @@ async def order_trailing_stop(symbol, quantity, side, trailAmount, trailType='pe
     stopPrice = round_price(stopPrice)
 
     payload = {
-        'account': await load_account_profile(account_number=account_number, info='url'),
-        'instrument': await get_instruments_by_symbols(symbol, info='url')[0],
+        'account': await load_account_profile(client, account_number=account_number, info='url'),
+        'instrument': await get_instruments_by_symbols(client, symbol, info='url')[0],
         'symbol': symbol,
         'quantity': quantity,
         'ref_id': str(uuid4()),
@@ -769,13 +769,13 @@ async def order_trailing_stop(symbol, quantity, side, trailAmount, trailType='pe
         payload['trailing_peg'] = {'type': 'percentage', 'percentage': str(percentage)}
 
     url = orders_url()
-    data = await request_post(url, payload, json=True, jsonify_data=jsonify)
+    data = await request_post(client, url, payload, json=True, jsonify_data=jsonify)
 
     return (data)
 
 
 @login_required
-async def order(symbol, quantity, side, limitPrice=None, stopPrice=None, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True, market_hours='regular_hours'):
+async def order(client, symbol, quantity, side, limitPrice=None, stopPrice=None, account_number=None, timeInForce='gtc', extendedHours=False, jsonify=True, market_hours='regular_hours'):
     """A generic order function.
 
     :param symbol: The stock ticker of the stock to sell.
@@ -832,17 +832,17 @@ async def order(symbol, quantity, side, limitPrice=None, stopPrice=None, account
             price = None
         trigger = "stop"
     else:
-        price = round_price(next(iter(await get_latest_price(symbol, priceType, extendedHours)), 0.00))
+        price = round_price(next(iter(await get_latest_price(client, symbol, priceType, extendedHours)), 0.00))
         
     from datetime import datetime
     payload = {
-        'account': await load_account_profile(account_number=account_number, info='url'),
-        'instrument': await get_instruments_by_symbols(symbol, info='url')[0],
+        'account': await load_account_profile(client, account_number=account_number, info='url'),
+        'instrument': await get_instruments_by_symbols(client, symbol, info='url')[0],
         'symbol': symbol,
         'price': price,
-        'ask_price': round_price(next(iter(await get_latest_price(symbol, "ask_price", extendedHours)), 0.00)),
+        'ask_price': round_price(next(iter(await get_latest_price(client, symbol, "ask_price", extendedHours)), 0.00)),
         'bid_ask_timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'),
-        'bid_price': round_price(next(iter(await get_latest_price(symbol, "bid_price", extendedHours)), 0.00)),
+        'bid_price': round_price(next(iter(await get_latest_price(client, symbol, "bid_price", extendedHours)), 0.00)),
         'quantity': quantity,
         'ref_id': str(uuid4()),
         'type': orderType,
@@ -874,13 +874,13 @@ async def order(symbol, quantity, side, limitPrice=None, stopPrice=None, account
         
     url = orders_url()
     # print(payload)
-    data = await request_post(url, payload, jsonify_data=jsonify)
+    data = await request_post(client, url, payload, jsonify_data=jsonify)
 
     return(data)
 
 
 @login_required
-async def order_option_credit_spread(price, symbol, quantity, spread, timeInForce='gtc', account_number=None, jsonify=True):
+async def order_option_credit_spread(client, price, symbol, quantity, spread, timeInForce='gtc', account_number=None, jsonify=True):
     """Submits a limit order for an option credit spread.
 
     :param price: The limit price to trigger a sell of the option.
@@ -908,11 +908,11 @@ async def order_option_credit_spread(price, symbol, quantity, spread, timeInForc
     such as the order id, the state of order (queued, confired, filled, failed, canceled, etc.), \
     the price, and the quantity.
     """
-    return(await order_option_spread("credit", price, symbol, quantity, spread, timeInForce, account_number, jsonify))
+    return(await order_option_spread(client, "credit", price, symbol, quantity, spread, timeInForce, account_number, jsonify))
 
 
 @login_required
-async def order_option_debit_spread(price, symbol, quantity, spread, timeInForce='gtc', account_number=None, jsonify=True):
+async def order_option_debit_spread(client, price, symbol, quantity, spread, timeInForce='gtc', account_number=None, jsonify=True):
     """Submits a limit order for an option debit spread.
 
     :param price: The limit price to trigger a sell of the option.
@@ -940,11 +940,11 @@ async def order_option_debit_spread(price, symbol, quantity, spread, timeInForce
     such as the order id, the state of order (queued, confired, filled, failed, canceled, etc.), \
     the price, and the quantity.
     """
-    return(await order_option_spread("debit", price, symbol, quantity, spread, timeInForce, account_number, jsonify))
+    return(await order_option_spread(client, "debit", price, symbol, quantity, spread, timeInForce, account_number, jsonify))
 
 
 @login_required
-async def order_option_spread(direction, price, symbol, quantity, spread, account_number=None, timeInForce='gtc', jsonify=True):
+async def order_option_spread(client, direction, price, symbol, quantity, spread, account_number=None, timeInForce='gtc', jsonify=True):
     """Submits a limit order for an option spread. i.e. place a debit / credit spread
 
     :param direction: Can be "credit" or "debit".
@@ -991,7 +991,7 @@ async def order_option_spread(direction, price, symbol, quantity, spread, accoun
                      'option': option_instruments_url(optionID)})
 
     payload = {
-        'account': await load_account_profile(account_number=account_number, info='url'),
+        'account': await load_account_profile(client, account_number=account_number, info='url'),
         'direction': direction,
         'time_in_force': timeInForce,
         'legs': legs,
@@ -1005,13 +1005,13 @@ async def order_option_spread(direction, price, symbol, quantity, spread, accoun
     }
 
     url = option_orders_url()
-    data = await request_post(url, payload, json=True, jsonify_data=jsonify)
+    data = await request_post(client, url, payload, json=True, jsonify_data=jsonify)
 
     return(data)
 
 
 @login_required
-async def order_buy_option_limit(positionEffect, creditOrDebit, price, symbol, quantity, expirationDate, strike, optionType='both', account_number=None, timeInForce='gtc', jsonify=True):
+async def order_buy_option_limit(client, positionEffect, creditOrDebit, price, symbol, quantity, expirationDate, strike, optionType='both', account_number=None, timeInForce='gtc', jsonify=True):
     """Submits a limit order for an option. i.e. place a long call or a long put.
 
     :param positionEffect: Either 'open' for a buy to open effect or 'close' for a buy to close effect.
@@ -1048,10 +1048,10 @@ async def order_buy_option_limit(positionEffect, creditOrDebit, price, symbol, q
         print(message, file=get_output())
         return None
 
-    optionID = await id_for_option(symbol, expirationDate, strike, optionType)
+    optionID = await id_for_option(client, symbol, expirationDate, strike, optionType)
 
     payload = {
-        'account': await load_account_profile(account_number=account_number, info='url'),
+        'account': await load_account_profile(client, account_number=account_number, info='url'),
         'direction': creditOrDebit,
         'time_in_force': timeInForce,
         'legs': [
@@ -1069,13 +1069,13 @@ async def order_buy_option_limit(positionEffect, creditOrDebit, price, symbol, q
 
     url = option_orders_url()
     # print(payload)
-    data = await request_post(url, payload, json=True, jsonify_data=jsonify)
+    data = await request_post(client, url, payload, json=True, jsonify_data=jsonify)
 
     return(data)
 
 
 @login_required
-async def order_buy_option_stop_limit(positionEffect, creditOrDebit, limitPrice, stopPrice, symbol, quantity, expirationDate, strike, optionType='both', account_number=None, timeInForce='gtc', jsonify=True):
+async def order_buy_option_stop_limit(client, positionEffect, creditOrDebit, limitPrice, stopPrice, symbol, quantity, expirationDate, strike, optionType='both', account_number=None, timeInForce='gtc', jsonify=True):
     """Submits a stop order to be turned into a limit order once a certain stop price is reached.
 
     :param positionEffect: Either 'open' for a buy to open effect or 'close' for a buy to close effect.
@@ -1114,10 +1114,10 @@ async def order_buy_option_stop_limit(positionEffect, creditOrDebit, limitPrice,
         print(message, file=get_output())
         return None
 
-    optionID = await id_for_option(symbol, expirationDate, strike, optionType)
+    optionID = await id_for_option(client, symbol, expirationDate, strike, optionType)
 
     payload = {
-        'account': await load_account_profile(account_number=account_number, info='url'),
+        'account': await load_account_profile(client, account_number=account_number, info='url'),
         'direction': creditOrDebit,
         'time_in_force': timeInForce,
         'legs': [
@@ -1135,12 +1135,12 @@ async def order_buy_option_stop_limit(positionEffect, creditOrDebit, limitPrice,
     }
 
     url = option_orders_url()
-    data = await request_post(url, payload, json=True, jsonify_data=jsonify)
+    data = await request_post(client, url, payload, json=True, jsonify_data=jsonify)
 
     return(data)
 
 
-async def order_sell_option_stop_limit(positionEffect, creditOrDebit, limitPrice, stopPrice, symbol, quantity, expirationDate, strike, optionType='both', account_number=None, timeInForce='gtc', jsonify=True):
+async def order_sell_option_stop_limit(client, positionEffect, creditOrDebit, limitPrice, stopPrice, symbol, quantity, expirationDate, strike, optionType='both', account_number=None, timeInForce='gtc', jsonify=True):
     """Submits a stop order to be turned into a limit order once a certain stop price is reached.
 
     :param positionEffect: Either 'open' for a buy to open effect or 'close' for a buy to close effect.
@@ -1179,10 +1179,10 @@ async def order_sell_option_stop_limit(positionEffect, creditOrDebit, limitPrice
         print(message, file=get_output())
         return None
 
-    optionID = await id_for_option(symbol, expirationDate, strike, optionType)
+    optionID = await id_for_option(client, symbol, expirationDate, strike, optionType)
 
     payload = {
-        'account': await load_account_profile(account_number=account_number, info='url'),
+        'account': await load_account_profile(client, account_number=account_number, info='url'),
         'direction': creditOrDebit,
         'time_in_force': timeInForce,
         'legs': [
@@ -1200,13 +1200,13 @@ async def order_sell_option_stop_limit(positionEffect, creditOrDebit, limitPrice
     }
 
     url = option_orders_url()
-    data = await request_post(url, payload, json=True, jsonify_data=jsonify)
+    data = await request_post(client, url, payload, json=True, jsonify_data=jsonify)
 
     return(data)
 
 
 @login_required
-async def order_sell_option_limit(positionEffect, creditOrDebit, price, symbol, quantity, expirationDate, strike, optionType='both', account_number=None, timeInForce='gtc', jsonify=True):
+async def order_sell_option_limit(client, positionEffect, creditOrDebit, price, symbol, quantity, expirationDate, strike, optionType='both', account_number=None, timeInForce='gtc', jsonify=True):
     """Submits a limit order for an option. i.e. place a short call or a short put.
 
     :param positionEffect: Either 'open' for a sell to open effect or 'close' for a sell to close effect.
@@ -1243,10 +1243,10 @@ async def order_sell_option_limit(positionEffect, creditOrDebit, price, symbol, 
         print(message, file=get_output())
         return None
 
-    optionID = await id_for_option(symbol, expirationDate, strike, optionType)
+    optionID = await id_for_option(client, symbol, expirationDate, strike, optionType)
 
     payload = {
-        'account': await load_account_profile(account_number=account_number, info='url'),
+        'account': await load_account_profile(client, account_number=account_number, info='url'),
         'direction': creditOrDebit,
         'time_in_force': timeInForce,
         'legs': [
@@ -1263,13 +1263,13 @@ async def order_sell_option_limit(positionEffect, creditOrDebit, price, symbol, 
     }
 
     url = option_orders_url()
-    data = await request_post(url, payload, json=True, jsonify_data=jsonify)
+    data = await request_post(client, url, payload, json=True, jsonify_data=jsonify)
 
     return(data)
 
 
 @login_required
-async def order_buy_crypto_by_price(symbol, amountInDollars, timeInForce='gtc', jsonify=True):
+async def order_buy_crypto_by_price(client, symbol, amountInDollars, timeInForce='gtc', jsonify=True):
     """Submits a market order for a crypto by specifying the amount in dollars that you want to trade.
     Good for share fractions up to 8 decimal places.
 
@@ -1286,11 +1286,11 @@ async def order_buy_crypto_by_price(symbol, amountInDollars, timeInForce='gtc', 
     the price, and the quantity.
 
     """ 
-    return await order_crypto(symbol, "buy", amountInDollars, "price", None, timeInForce, jsonify)
+    return await order_crypto(client, symbol, "buy", amountInDollars, "price", None, timeInForce, jsonify)
 
 
 @login_required
-async def order_buy_crypto_by_quantity(symbol, quantity, timeInForce='gtc', jsonify=True):
+async def order_buy_crypto_by_quantity(client, symbol, quantity, timeInForce='gtc', jsonify=True):
     """Submits a market order for a crypto by specifying the decimal amount of shares to buy.
     Good for share fractions up to 8 decimal places.
 
@@ -1307,11 +1307,11 @@ async def order_buy_crypto_by_quantity(symbol, quantity, timeInForce='gtc', json
     the price, and the quantity.
 
     """ 
-    return await order_crypto(symbol, "buy", quantity, "quantity", None, timeInForce, jsonify)
+    return await order_crypto(client, symbol, "buy", quantity, "quantity", None, timeInForce, jsonify)
 
 
 @login_required
-async def order_buy_crypto_limit(symbol, quantity, limitPrice, timeInForce='gtc', jsonify=True):
+async def order_buy_crypto_limit(client, symbol, quantity, limitPrice, timeInForce='gtc', jsonify=True):
     """Submits a limit order for a crypto by specifying the decimal amount of shares to buy.
     Good for share fractions up to 8 decimal places.
 
@@ -1330,11 +1330,11 @@ async def order_buy_crypto_limit(symbol, quantity, limitPrice, timeInForce='gtc'
     the price, and the quantity.
 
     """ 
-    return await order_crypto(symbol, "buy", quantity, "quantity", limitPrice, timeInForce, jsonify)
+    return await order_crypto(client, symbol, "buy", quantity, "quantity", limitPrice, timeInForce, jsonify)
 
 
 @login_required
-async def order_buy_crypto_limit_by_price(symbol, amountInDollars, limitPrice, timeInForce='gtc', jsonify=True):
+async def order_buy_crypto_limit_by_price(client, symbol, amountInDollars, limitPrice, timeInForce='gtc', jsonify=True):
     """Submits a limit order for a crypto by specifying the decimal price to buy.
     Good for share fractions up to 8 decimal places.
 
@@ -1353,11 +1353,11 @@ async def order_buy_crypto_limit_by_price(symbol, amountInDollars, limitPrice, t
     the price, and the quantity.
 
     """
-    return await order_crypto(symbol, "buy", amountInDollars, "price", limitPrice, timeInForce, jsonify)
+    return await order_crypto(client, symbol, "buy", amountInDollars, "price", limitPrice, timeInForce, jsonify)
 
 
 @login_required
-async def order_sell_crypto_by_price(symbol, amountInDollars, timeInForce='gtc', jsonify=True):
+async def order_sell_crypto_by_price(client, symbol, amountInDollars, timeInForce='gtc', jsonify=True):
     """Submits a market order for a crypto by specifying the amount in dollars that you want to trade.
     Good for share fractions up to 8 decimal places.
 
@@ -1374,11 +1374,11 @@ async def order_sell_crypto_by_price(symbol, amountInDollars, timeInForce='gtc',
     the price, and the quantity.
 
     """ 
-    return await order_crypto(symbol, "sell", amountInDollars, "price", None, timeInForce, jsonify)
+    return await order_crypto(client, symbol, "sell", amountInDollars, "price", None, timeInForce, jsonify)
 
 
 @login_required
-async def order_sell_crypto_by_quantity(symbol, quantity, timeInForce='gtc', jsonify=True):
+async def order_sell_crypto_by_quantity(client, symbol, quantity, timeInForce='gtc', jsonify=True):
     """Submits a market order for a crypto by specifying the decimal amount of shares to buy.
     Good for share fractions up to 8 decimal places.
 
@@ -1395,11 +1395,11 @@ async def order_sell_crypto_by_quantity(symbol, quantity, timeInForce='gtc', jso
     the price, and the quantity.
 
     """ 
-    return await order_crypto(symbol, "sell", quantity, "quantity", None, timeInForce, jsonify)
+    return await order_crypto(client, symbol, "sell", quantity, "quantity", None, timeInForce, jsonify)
 
 
 @login_required
-async def order_sell_crypto_limit(symbol, quantity, limitPrice, timeInForce='gtc', jsonify=True):
+async def order_sell_crypto_limit(client, symbol, quantity, limitPrice, timeInForce='gtc', jsonify=True):
     """Submits a limit order for a crypto by specifying the decimal amount of shares to sell.
     Good for share fractions up to 8 decimal places.
 
@@ -1418,11 +1418,11 @@ async def order_sell_crypto_limit(symbol, quantity, limitPrice, timeInForce='gtc
     the price, and the quantity.
 
     """
-    return await order_crypto(symbol, "sell", quantity, "quantity", limitPrice, timeInForce, jsonify)
+    return await order_crypto(client, symbol, "sell", quantity, "quantity", limitPrice, timeInForce, jsonify)
 
 
 @login_required
-async def order_sell_crypto_limit_by_price(symbol, amountInDollars, limitPrice, timeInForce='gtc', jsonify=True):
+async def order_sell_crypto_limit_by_price(client, symbol, amountInDollars, limitPrice, timeInForce='gtc', jsonify=True):
     """Submits a limit order for a crypto by specifying the decimal price to sell.
     Good for share fractions up to 8 decimal places.
 
@@ -1441,11 +1441,11 @@ async def order_sell_crypto_limit_by_price(symbol, amountInDollars, limitPrice, 
     the price, and the quantity.
 
     """
-    return await order_crypto(symbol, "sell", amountInDollars, "price", limitPrice, timeInForce, jsonify)
+    return await order_crypto(client, symbol, "sell", amountInDollars, "price", limitPrice, timeInForce, jsonify)
 
 
 @login_required
-async def order_crypto(symbol, side, quantityOrPrice, amountIn="quantity", limitPrice=None, timeInForce="gtc", jsonify=True):
+async def order_crypto(client, symbol, side, quantityOrPrice, amountIn="quantity", limitPrice=None, timeInForce="gtc", jsonify=True):
     """Submits an order for a crypto.
 
     :param symbol: The crypto ticker of the crypto to trade.
@@ -1474,7 +1474,7 @@ async def order_crypto(symbol, side, quantityOrPrice, amountIn="quantity", limit
         print(message, file=get_output())
         return None
 
-    crypto_id = await get_crypto_id(symbol)
+    crypto_id = await get_crypto_id(client, symbol)
     orderType = "market"
 
     if side == "buy":
@@ -1486,7 +1486,7 @@ async def order_crypto(symbol, side, quantityOrPrice, amountIn="quantity", limit
         price = limitPrice
         orderType = "limit"
     else:
-        price = round_price(await get_crypto_quote_from_id(crypto_id, info=priceType))
+        price = round_price(await get_crypto_quote_from_id(client, crypto_id, info=priceType))
 
     if amountIn == "quantity":
         quantity = quantityOrPrice
@@ -1494,7 +1494,7 @@ async def order_crypto(symbol, side, quantityOrPrice, amountIn="quantity", limit
         quantity = round_price(quantityOrPrice/price)
 
     payload = {
-        'account_id': await load_crypto_profile(info="id"),
+        'account_id': await load_crypto_profile(client, info="id"),
         'currency_pair_id': crypto_id,
         'price': price,
         'quantity': quantity,
@@ -1509,7 +1509,7 @@ async def order_crypto(symbol, side, quantityOrPrice, amountIn="quantity", limit
     # This is safe because 'ref_id' guards us from duplicate orders
     attempts = 3
     while attempts > 0:
-        data = await request_post(url, payload, json=True, jsonify_data=jsonify)
+        data = await request_post(client, url, payload, json=True, jsonify_data=jsonify)
         if data is not None:
             break
 
