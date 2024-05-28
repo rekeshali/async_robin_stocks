@@ -18,7 +18,7 @@ Logging is handled by aiologger, ensuring that log operations do not block the m
 File I/O utilizes aiofile for asynchronous context (although I've not tested it).
 
 Here is an example that gets data from multiple user accounts concurrently:
-.. code-block:: python
+.. code:: python
 
     import asyncio
     import logging
