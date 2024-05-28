@@ -3,7 +3,7 @@ from robin_stocks.robinhood.helper import *
 from robin_stocks.robinhood.urls import *
 
 @login_required
-def load_crypto_profile(info=None):
+async def load_crypto_profile(info=None):
     """Gets the information associated with the crypto account.
 
     :param info: The name of the key whose value is to be returned from the function.
@@ -22,12 +22,12 @@ def load_crypto_profile(info=None):
 
     """
     url = crypto_account_url()
-    data = request_get(url, 'indexzero')
+    data = await request_get(url, 'indexzero')
     return(filter_data(data, info))
 
 
 @login_required
-def get_crypto_positions(info=None):
+async def get_crypto_positions(info=None):
     """Returns crypto positions for the account.
 
     :param info: Will filter the results to get a specific value.
@@ -47,11 +47,11 @@ def get_crypto_positions(info=None):
 
     """
     url = crypto_holdings_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
     return(filter_data(data, info))
 
 
-def get_crypto_currency_pairs(info=None):
+async def get_crypto_currency_pairs(info=None):
     """Gets a list of all the cypto currencies that you can trade.
 
     :param info: Will filter the results to have a list of the values that correspond to key that matches info.
@@ -72,11 +72,11 @@ def get_crypto_currency_pairs(info=None):
 
     """
     url = crypto_currency_pairs_url()
-    data = request_get(url, 'results')
+    data = await request_get(url, 'results')
     return(filter_data(data, info))
 
 
-def get_crypto_info(symbol, info=None):
+async def get_crypto_info(symbol, info=None):
     """Gets information about a crpyto currency.
 
     :param symbol: The crypto ticker.
@@ -99,7 +99,7 @@ def get_crypto_info(symbol, info=None):
 
     """
     url = crypto_currency_pairs_url()
-    data = request_get(url, 'results')
+    data = await request_get(url, 'results')
     data = [x for x in data if x['asset_currency']['code'] == symbol]
     if len(data) > 0:
         data = data[0]
@@ -109,7 +109,7 @@ def get_crypto_info(symbol, info=None):
 
 
 SYMBOL_TO_ID_CACHE = {}
-def get_crypto_id(symbol):
+async def get_crypto_id(symbol):
     """Gets the Robinhood ID of the given cryptocurrency used to make trades.
     This function uses an in-memory cache of the IDs to save a network round-trip when possible.
 
@@ -120,14 +120,14 @@ def get_crypto_id(symbol):
     if symbol in SYMBOL_TO_ID_CACHE:
         return SYMBOL_TO_ID_CACHE[symbol]
 
-    id = get_crypto_info(symbol, 'id')
+    id = await get_crypto_info(symbol, 'id')
     if id:
         SYMBOL_TO_ID_CACHE[symbol] = id
     return id
 
 
 @login_required
-def get_crypto_quote(symbol, info=None):
+async def get_crypto_quote(symbol, info=None):
     """Gets information about a crypto including low price, high price, and open price
 
     :param symbol: The crypto ticker.
@@ -147,14 +147,14 @@ def get_crypto_quote(symbol, info=None):
                       * volume
  
     """
-    id = get_crypto_info(symbol, info='id')
+    id = await get_crypto_info(symbol, info='id')
     url = crypto_quote_url(id)
-    data = request_get(url)
+    data = await request_get(url)
     return(filter_data(data, info))
 
 
 @login_required
-def get_crypto_quote_from_id(id, info=None):
+async def get_crypto_quote_from_id(id, info=None):
     """Gets information about a crypto including low price, high price, and open price. Uses the id instead of crypto ticker.
 
     :param id: The id of a crypto.
@@ -175,12 +175,12 @@ def get_crypto_quote_from_id(id, info=None):
 
     """
     url = crypto_quote_url(id)
-    data = request_get(url)
+    data = await request_get(url)
     return(filter_data(data, info))
 
 
 @login_required
-def get_crypto_historicals(symbol, interval='hour', span='week', bounds='24_7', info=None):
+async def get_crypto_historicals(symbol, interval='hour', span='week', bounds='24_7', info=None):
     """Gets historical information about a crypto including open price, close price, high price, and low price.
 
     :param symbol: The crypto ticker.
@@ -227,12 +227,12 @@ def get_crypto_historicals(symbol, interval='hour', span='week', bounds='24_7', 
 
 
     symbol = inputs_to_set(symbol)
-    id = get_crypto_info(symbol[0], info='id')
+    id = await get_crypto_info(symbol[0], info='id')
     url = crypto_historical_url(id)
     payload = {'interval': interval,
                'span': span,
                'bounds': bounds}
-    data = request_get(url, 'regular', payload)
+    data = await request_get(url, 'regular', payload)
 
     histData = []
     cryptoSymbol = data['symbol']
