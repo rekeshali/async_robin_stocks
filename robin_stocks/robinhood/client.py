@@ -1,5 +1,9 @@
 import aiohttp
+import logging
+import asyncio
 from aiologger import Logger
+from aiologger.handlers.streams import AsyncStreamHandler
+from aiologger.formatters.base import Formatter
 
 from .account import (build_holdings, build_user_profile,
                       delete_symbols_from_watchlist,
@@ -25,8 +29,8 @@ from .crypto import (get_crypto_currency_pairs, get_crypto_historicals,
 from .export import (export_completed_crypto_orders,
                      export_completed_option_orders,
                      export_completed_stock_orders)
-from .helper import (filter_data, get_output, request_delete, request_document,
-                     request_get, request_post, set_output)
+from .helper import (filter_data, request_delete, request_document,
+                     request_get, request_post)
 from .markets import (get_all_stocks_from_market_tag, get_currency_pairs,
                       get_market_hours, get_market_next_open_hours,
                       get_market_next_open_hours_after_date,
@@ -79,7 +83,12 @@ from .stocks import (find_instrument_data, get_earnings, get_events,
                      get_stock_quote_by_id, get_stock_quote_by_symbol,
                      get_symbol_by_url)
 
-       
+class LogFormatter(Formatter):
+    def format(self, record):
+        log_level = record.levelname
+        message = record.msg
+        return f"[{log_level}] {message}"
+
 class AsyncIORobinStocksClient:
     LOGGED_IN = False
 
@@ -94,13 +103,26 @@ class AsyncIORobinStocksClient:
         "User-Agent": "*"
     }
 
-    def __init__(self, logger=None):
-        self.logger = logger if logger else Logger.with_default_handlers(name="async-robin-stocks-client")
+    def __init__(self, logger=None, log_level=logging.INFO):
+        self.logger = logger if logger else self._async_robin_stocks_logger(log_level)
         self.SESSION = aiohttp.ClientSession(headers=self.HEADERS)
 
     async def close(self):
         await self.SESSION.close()
-
+    
+    def _async_robin_stocks_logger(self, log_level):
+        logger = Logger(name="async-robin-stocks-client-logger", level=log_level)
+        
+        # Adding a file handler with a custom formatter
+        stream_handler = AsyncStreamHandler()
+        custom_formatter = LogFormatter()
+        stream_handler.formatter = custom_formatter
+        
+        # Add the custom handler to the logger
+        logger.add_handler(stream_handler)
+        
+        return logger
+    
     def set_login_state(self, logged_in):
         """Sets the login state"""
         self.LOGGED_IN = logged_in
