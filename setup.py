@@ -6,15 +6,15 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-setup(name='robin_stocks',
-      version='3.1.0',
-      description='A Python wrapper around the Robinhood API',
+setup(name='async_robin_stocks',
+      version='3.1.30',
+      description='An asynchronous fork of the popular Python wrapper around the Robinhood API originally written by Josh Fernandes',
       long_description=long_description,
       long_description_content_type='text/x-rst',
-      url='https://github.com/jmfernandes/robin_stocks',
-      author='Josh Fernandes',
-      author_email='joshfernandes@mac.com',
-      keywords=['robinhood','robin stocks','finance app','stocks','options','trading','investing'],
+      url='https://github.com/rekeshali/async_robin_stocks',
+      author='Rekesh Ali',
+      author_email='rekeshali@gmail.com',
+      keywords=['robinhood','robin stocks','finance app','stocks','options','trading','investing','asynchronous','async'],
       license='MIT',
       python_requires='>=3.9',
       packages=find_packages(),
@@ -25,6 +25,7 @@ setup(name='robin_stocks',
           'python-dotenv',
           'cryptography',
           'aiofiles',
-          'aiohttp'
+          'aiohttp',
+          'aiologger'
       ],
       zip_safe=False)
