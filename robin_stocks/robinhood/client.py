@@ -318,10 +318,6 @@ class AsyncIORobinStocksClient:
         return await filter_data(self, *args, **kwargs)
     
 
-    def get_output(self, *args, **kwargs):
-        get_output(self, *args, **kwargs)
-    
-
     async def request_delete(self, *args, **kwargs):
         return await request_delete(self, *args, **kwargs)
     
@@ -336,10 +332,6 @@ class AsyncIORobinStocksClient:
 
     async def request_post(self, *args, **kwargs):
         return await request_post(self, *args, **kwargs)
-    
-
-    def set_output(self, *args, **kwargs):
-        set_output(self, *args, **kwargs)
     
 
     async def get_all_stocks_from_market_tag(self, *args, **kwargs):
