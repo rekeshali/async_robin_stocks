@@ -1,5 +1,60 @@
 .. image:: docs/source/_static/pics/title.PNG
 
+Asynchronous Robin-Stocks API Client
+====================================
+Blew up your port and unimpressed with the AWS free tier thread count? 
+Use async_robin_stocks to manage all your positions concurrently.
+(not financial advice)
+
+Serious: This library has been enhanced to support asynchronous operations (only the robinhood part).
+No changes have been made to the API itself, just set up the client and call functions as you normally would (+ await).
+I have tested many of the stocks, options, and accounts methods and found no issues. 
+I have not tested order placing or post requests in general besides logging in.
+
+Key changes include:
+All major functions and methods have been refactored to use async and await, enabling non-blocking execution.
+The session global has been replaced with a client class that now uses aiohttp for asynchronous HTTP requests.
+Logging is handled by aiologger, ensuring that log operations do not block the main event loop.
+File I/O utilizes aiofile for asynchronous context (although I've not tested it).
+
+Here is an example that gets data from multiple user accounts concurrently:
+.. code-block:: python
+
+    import asyncio
+    import logging
+    from robin_stocks.robinhood import AsyncIORobinStocksClient
+    from robin_stocks.robinhood.helper import requests_get
+
+    async def len_open_positions(user):
+        r = AsyncIORobinStocksClient(log_level=logging.DEBUG) # or pass a custom aiologger to 'logger' kwarg here
+        try:
+            user_name, pickle_name = user
+            await r.login(pickle_name=pickle_name)
+            await r.logger.info(f"{user_name} has {len(await r.get_open_stock_positions())} open stock positions")
+
+            # Advanced usage API requires you pass the client to it
+            advanced_get = await requests_get(r, 'https://robinhood.com/your/favorite/endpoint')
+
+            await r.logout()
+        except:
+            r.close()
+
+    # Process multiple users concurrently
+    async def main():
+        users = [("user1", "pickle1"), ("user2", "pickle2"), ("user3", "pickle3")]
+        tasks = [main(user) for user in users]
+        await asyncio.gather(*tasks)
+
+    if __name__ == "__main__":
+        asyncio.run(main())
+
+
+Also see "examples/robinhood examples/get_option_historicals.py" for another working example.
+
+NOTE: I'm a big fan of this library thanks all who have worked on this. 
+
+WARNING: THIS LIBRARY IS NOT FULLY TESTED USE AT YOUR OWN RISK.
+
 Robin-Stocks API Library
 ========================
 This library provides a pure python interface to interact with the Robinhood API, Gemini API,

@@ -1,6 +1,9 @@
-import robin_stocks.robinhood as r
+from robin_stocks.robinhood import AsyncIORobinStocksClient
 import matplotlib.pyplot as plt
 import datetime as dt
+import asyncio
+from aiologger import Logger
+from aiologger.handlers.files import AsyncFileHandler
 
 '''
 This is example code that gets the past 30 days of opening and closing prices
@@ -18,33 +21,50 @@ username = ''
 password = ''
 #!!!
 
-login = r.login(username,password)
+async def get_historical_options_data():
+    # Log to specific file
+    logger = Logger(name="custom-logger")
+    file_handler = AsyncFileHandler(filename='historical_options.log')
+    logger.add_handler(file_handler)
+    r = AsyncIORobinStocksClient(logger=logger)
+    try:
+        await r.login(username, password, pickle_name="creds")
+        await r.logger.info('Logged in!')
+        await r.logger.info(len(await r.get_open_stock_positions()))
+        #!!! fill out the specific option information
+        symbol = 'AAPL'
+        symbol_name = await r.get_name_by_symbol(symbol)
+        expirationDate = '2024-05-31' # format is YYYY-MM-DD.
+        strike = 200
+        optionType = 'call' # available options are 'call' or 'put' or None.
+        interval = '5minute' # available options are '5minute', '10minute', 'hour', 'day', and 'week'.
+        span = 'week' # available options are 'day', 'week', 'year', and '5year'.
+        bounds = 'regular' # available options are 'regular', 'trading', and 'extended'.
+        info = None
+        #!!!
 
-#!!! fill out the specific option information
-symbol = 'AAPL'
-symbol_name = r.get_name_by_symbol(symbol)
-expirationDate = '2020-07-02' # format is YYYY-MM-DD.
-strike = 300
-optionType = 'call' # available options are 'call' or 'put' or None.
-interval = 'hour' # available options are '5minute', '10minute', 'hour', 'day', and 'week'.
-span = 'week' # available options are 'day', 'week', 'year', and '5year'.
-bounds = 'regular' # available options are 'regular', 'trading', and 'extended'.
-info = None
-#!!!
+        historicalData = await r.get_option_historicals(symbol, expirationDate, strike, optionType, interval, span, bounds, info)
 
-historicalData = r.get_option_historicals(symbol, expirationDate, strike, optionType, interval, span, bounds, info)
+        dates = []
+        closingPrices = []
+        openPrices = []
+        # print('not async')
+        for data_point in historicalData:
+            dates.append(data_point['begins_at'])
+            closingPrices.append(data_point['close_price'])
+            openPrices.append(data_point['open_price'])
 
-dates = []
-closingPrices = []
-openPrices = []
+        # change the dates into a format that matplotlib can recognize.
+        x = [dt.datetime.strptime(d,'%Y-%m-%dT%H:%M:%SZ') for d in dates]
 
-for data_point in historicalData:
-    dates.append(data_point['begins_at'])
-    closingPrices.append(data_point['close_price'])
-    openPrices.append(data_point['open_price'])
+        await r.logout()
+    except Exception as e:
+        await r.close()
+        raise(e)
+    
+    return symbol_name, x, closingPrices, openPrices
 
-# change the dates into a format that matplotlib can recognize.
-x = [dt.datetime.strptime(d,'%Y-%m-%dT%H:%M:%SZ') for d in dates]
+[symbol_name, x, closingPrices, openPrices] = asyncio.run(get_historical_options_data())
 
 # plot the data.
 plt.plot(x, closingPrices, 'ro')
