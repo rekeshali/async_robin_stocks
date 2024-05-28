@@ -205,4 +205,4 @@ async def logout(client):
     """
     client.set_login_state(False)
     client.update_session('Authorization', None)
-    await client.close()
+    await client.SESSION.close()
