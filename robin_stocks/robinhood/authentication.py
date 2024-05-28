@@ -117,7 +117,8 @@ async def login(client, username=None, password=None, expiresIn=86400, scope='in
         if store_session:
             try:
                 async with aiofiles.open(pickle_path, 'rb') as f:
-                    pickle_data = pickle.load(await f.read())
+                    data = await f.read()
+                    pickle_data = pickle.loads(data)
                     access_token = pickle_data['access_token']
                     token_type = pickle_data['token_type']
                     refresh_token = pickle_data['refresh_token']
