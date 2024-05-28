@@ -1,1 +1,1 @@
-from robin_stocks import gemini, robinhood, tda
+from async_robin_stocks import gemini, robinhood, tda

@@ -1,9 +1,9 @@
-from robin_stocks.gemini.authentication import (generate_order_id,
+from async_robin_stocks.gemini.authentication import (generate_order_id,
                                                 generate_signature)
-from robin_stocks.gemini.crypto import get_price
-from robin_stocks.gemini.helper import (format_inputs, login_required,
+from async_robin_stocks.gemini.crypto import get_price
+from async_robin_stocks.gemini.helper import (format_inputs, login_required,
                                         request_post)
-from robin_stocks.gemini.urls import URLS
+from async_robin_stocks.gemini.urls import URLS
 
 
 @login_required
