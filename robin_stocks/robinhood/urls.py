@@ -73,19 +73,19 @@ def news_url(symbol):
     return('https://api.robinhood.com/midlands/news/{0}/?'.format(symbol))
 
 
-def popularity_url(symbol):
-    return('https://api.robinhood.com/instruments/{0}/popularity/'.format(id_for_stock(symbol)))
+async def popularity_url(symbol):
+    return('https://api.robinhood.com/instruments/{0}/popularity/'.format(await id_for_stock(symbol)))
 
 def quotes_url():
     return('https://api.robinhood.com/quotes/')
 
 
-def ratings_url(symbol):
-    return('https://api.robinhood.com/midlands/ratings/{0}/'.format(id_for_stock(symbol)))
+async def ratings_url(symbol):
+    return('https://api.robinhood.com/midlands/ratings/{0}/'.format(await id_for_stock(symbol)))
 
 
-def splits_url(symbol):
-    return('https://api.robinhood.com/instruments/{0}/splits/'.format(id_for_stock(symbol)))
+async def splits_url(symbol):
+    return('https://api.robinhood.com/instruments/{0}/splits/'.format(await id_for_stock(symbol)))
 
 # account
 
@@ -202,8 +202,8 @@ def aggregate_url(account_number):
         return('https://api.robinhood.com/options/aggregate_positions/')
 
 
-def chains_url(symbol):
-    return('https://api.robinhood.com/options/chains/{0}/'.format(id_for_chain(symbol)))
+async def chains_url(symbol):
+    return('https://api.robinhood.com/options/chains/{0}/'.format(await id_for_chain(symbol)))
 
 
 def option_historicals_url(id):
