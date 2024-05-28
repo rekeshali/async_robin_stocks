@@ -23,6 +23,8 @@ setup(name='robin_stocks',
           'requests',
           'pyotp',
           'python-dotenv',
-          'cryptography'
+          'cryptography',
+          'aiofiles',
+          'aiohttp'
       ],
       zip_safe=False)
