@@ -6,7 +6,7 @@ Blew up your port and unimpressed with the AWS free tier thread count?
 Use async_robin_stocks to manage all your positions concurrently.
 (not financial advice)
 
-Serious: This library has been enhanced to support asynchronous operations (only the robinhood part).
+Seriously: This library has been enhanced to support asynchronous operations (only the robinhood part).
 No changes have been made to the API itself, just set up the client and call functions as you normally would (+ await).
 I have tested many of the stocks, options, and accounts methods and found no issues. 
 I have not tested order placing or post requests in general besides logging in.
