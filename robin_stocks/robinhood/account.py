@@ -1,6 +1,7 @@
 """Contains functions for getting information related to the user account."""
 import os
 from uuid import uuid4
+import aiofiles
 
 from robin_stocks.robinhood.helper import *
 from robin_stocks.robinhood.profiles import *
@@ -9,7 +10,7 @@ from robin_stocks.robinhood.urls import *
 
 
 @login_required
-def load_phoenix_account(info=None):
+async def load_phoenix_account(info=None):
     """Returns unified information about your account.
 
     :param info: Will filter the results to get a specific value.
@@ -46,11 +47,11 @@ def load_phoenix_account(info=None):
 
     """
     url = phoenix_url()
-    data = request_get(url, 'regular')
+    data = await request_get(url, 'regular')
     return(filter_data(data, info))
 
 @login_required
-def get_historical_portfolio(interval=None, span='week', bounds='regular',info=None):
+async def get_historical_portfolio(interval=None, span='week', bounds='regular',info=None):
     interval_check = ['5minute', '10minute', 'hour', 'day', 'week']
     span_check = ['day', 'week', 'month', '3month', 'year', '5year', 'all']
     bounds_check = ['extended', 'regular', 'trading']
@@ -79,12 +80,12 @@ def get_historical_portfolio(interval=None, span='week', bounds='regular',info=N
         'span': span,
         'bounds': bounds
     }
-    data = request_get(url, 'regular', payload)
+    data = await request_get(url, 'regular', payload)
 
     return(filter_data(data, info))
 
 @login_required
-def get_all_positions(info=None):
+async def get_all_positions(info=None):
     """Returns a list containing every position ever traded.
 
     :param info: Will filter the results to get a specific value.
@@ -111,13 +112,13 @@ def get_all_positions(info=None):
 
     """
     url = positions_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
 
     return(filter_data(data, info))
 
 
 @login_required
-def get_open_stock_positions(account_number=None, info=None):
+async def get_open_stock_positions(account_number=None, info=None):
     """Returns a list of stocks that are currently held.
 
     :param acccount_number: the robinhood account number.
@@ -147,13 +148,13 @@ def get_open_stock_positions(account_number=None, info=None):
     """
     url = positions_url(account_number=account_number)
     payload = {'nonzero': 'true'}
-    data = request_get(url, 'pagination', payload)
+    data = await request_get(url, 'pagination', payload)
 
     return(filter_data(data, info))
 
 
 @login_required
-def get_dividends(info=None):
+async def get_dividends(info=None):
     """Returns a list of dividend trasactions that include information such as the percentage rate,
     amount, shares of held stock, and date paid.
 
@@ -178,20 +179,20 @@ def get_dividends(info=None):
 
     """
     url = dividends_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
 
     return(filter_data(data, info))
 
 
 @login_required
-def get_total_dividends():
+async def get_total_dividends():
     """Returns a float number representing the total amount of dividends paid to the account.
 
     :returns: Total dollar amount of dividends paid to the account as a 2 precision float.
 
     """
     url = dividends_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
 
     dividend_total = 0
     for item in data:
@@ -230,7 +231,7 @@ def get_dividends_by_instrument(instrument, dividend_data):
 
 
 @login_required
-def get_notifications(info=None):
+async def get_notifications(info=None):
     """Returns a list of notifications.
 
     :param info: Will filter the results to get a specific value.
@@ -240,25 +241,25 @@ def get_notifications(info=None):
 
     """
     url = notifications_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
 
     return(filter_data(data, info))
 
 
 @login_required
-def get_latest_notification():
+async def get_latest_notification():
     """Returns the time of the latest notification.
 
     :returns: Returns a dictionary of key/value pairs. But there is only one key, 'last_viewed_at'
 
     """
     url = notifications_url(True)
-    data = request_get(url)
+    data = await request_get(url)
     return(data)
 
 
 @login_required
-def get_wire_transfers(info=None):
+async def get_wire_transfers(info=None):
     """Returns a list of wire transfers.
 
     :param info: Will filter the results to get a specific value.
@@ -268,12 +269,12 @@ def get_wire_transfers(info=None):
 
     """
     url = wiretransfers_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-def get_margin_calls(symbol=None):
+async def get_margin_calls(symbol=None):
     """Returns either all margin calls or margin calls for a specific stock.
 
     :param symbol: Will determine which stock to get margin calls for.
@@ -289,15 +290,15 @@ def get_margin_calls(symbol=None):
             print(message, file=get_output())
             return None
         payload = {'equity_instrument_id', id_for_stock(symbol)}
-        data = request_get(url, 'results', payload)
+        data = await request_get(url, 'results', payload)
     else:
-        data = request_get(url, 'results')
+        data = await request_get(url, 'results')
 
     return(data)
 
 
 @login_required
-def withdrawl_funds_to_bank_account(ach_relationship, amount, info=None):
+async def withdrawl_funds_to_bank_account(ach_relationship, amount, info=None):
     """Submits a post request to withdraw a certain amount of money to a bank account.
 
     :param ach_relationship: The url of the bank account you want to withdrawl the money to.
@@ -316,12 +317,12 @@ def withdrawl_funds_to_bank_account(ach_relationship, amount, info=None):
         "ach_relationship": ach_relationship,
         "ref_id": str(uuid4())
     }
-    data = request_post(url, payload)
+    data = await request_post(url, payload)
     return(filter_data(data, info))
 
 
 @login_required
-def deposit_funds_to_robinhood_account(ach_relationship, amount, info=None):
+async def deposit_funds_to_robinhood_account(ach_relationship, amount, info=None):
     """Submits a post request to deposit a certain amount of money from a bank account to Robinhood.
 
     :param ach_relationship: The url of the bank account you want to deposit the money from.
@@ -340,11 +341,11 @@ def deposit_funds_to_robinhood_account(ach_relationship, amount, info=None):
         "ach_relationship": ach_relationship,
         "ref_id": str(uuid4())
     }
-    data = request_post(url, payload)
+    data = await request_post(url, payload)
     return(filter_data(data, info))
 
 @login_required
-def get_linked_bank_accounts(info=None):
+async def get_linked_bank_accounts(info=None):
     """Returns all linked bank accounts.
 
     :param info: Will filter the results to get a specific value.
@@ -353,12 +354,12 @@ def get_linked_bank_accounts(info=None):
 
     """
     url = linked_url()
-    data = request_get(url, 'results')
+    data = await request_get(url, 'results')
     return(filter_data(data, info))
 
 
 @login_required
-def get_bank_account_info(id, info=None):
+async def get_bank_account_info(id, info=None):
     """Returns a single dictionary of bank information
 
     :param id: The bank id.
@@ -370,12 +371,12 @@ def get_bank_account_info(id, info=None):
 
     """
     url = linked_url(id)
-    data = request_get(url)
+    data = await request_get(url)
     return(filter_data(data, info))
 
 
 @login_required
-def unlink_bank_account(id):
+async def unlink_bank_account(id):
     """Unlinks a bank account.
 
     :param id: The bank id.
@@ -384,12 +385,12 @@ def unlink_bank_account(id):
 
     """
     url = linked_url(id, True)
-    data = request_post(url)
+    data = await request_post(url)
     return(data)
 
 
 @login_required
-def get_bank_transfers(direction=None, info=None):
+async def get_bank_transfers(direction=None, info=None):
     """Returns all bank transfers made for the account.
 
     :param direction: Possible values are 'received'. If left blank, function will return all withdrawls and deposits \
@@ -403,11 +404,11 @@ def get_bank_transfers(direction=None, info=None):
 
     """
     url = banktransfers_url(direction)
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
     return(filter_data(data, info))
 
 @login_required
-def get_card_transactions(cardType=None, info=None):
+async def get_card_transactions(cardType=None, info=None):
     """Returns all debit card transactions made on the account
 
     :param cardType: Will filter the card transaction types. Can be 'pending' or 'settled'.
@@ -423,11 +424,11 @@ def get_card_transactions(cardType=None, info=None):
         payload = { 'type': type }
 
     url = cardtransactions_url()
-    data = request_get(url, 'pagination', payload)
+    data = await request_get(url, 'pagination', payload)
     return(filter_data(data, info))
 
 @login_required
-def get_stock_loan_payments(info=None):
+async def get_stock_loan_payments(info=None):
     """Returns a list of loan payments.
 
     :param info: Will filter the results to get a specific value.
@@ -437,12 +438,12 @@ def get_stock_loan_payments(info=None):
 
     """
     url = stockloan_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-def get_margin_interest(info=None):
+async def get_margin_interest(info=None):
     """Returns a list of margin interest.
 
     :param info: Will filter the results to get a specific value.
@@ -452,12 +453,12 @@ def get_margin_interest(info=None):
 
     """
     url = margininterest_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-def get_subscription_fees(info=None):
+async def get_subscription_fees(info=None):
     """Returns a list of subscription fees.
 
     :param info: Will filter the results to get a specific value.
@@ -467,12 +468,12 @@ def get_subscription_fees(info=None):
 
     """
     url = subscription_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-def get_referrals(info=None):
+async def get_referrals(info=None):
     """Returns a list of referrals.
 
     :param info: Will filter the results to get a specific value.
@@ -482,12 +483,12 @@ def get_referrals(info=None):
 
     """
     url = referral_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
     return(filter_data(data, info))
 
 
 @login_required
-def get_day_trades(info=None):
+async def get_day_trades(info=None):
     """Returns recent day trades.
 
     :param info: Will filter the results to get a specific value.
@@ -498,12 +499,12 @@ def get_day_trades(info=None):
     """
     account = load_account_profile(info='account_number')
     url = daytrades_url(account)
-    data = request_get(url, 'regular')
+    data = await request_get(url, 'regular')
     return(filter_data(data, info))
 
 
 @login_required
-def get_documents(info=None):
+async def get_documents(info=None):
     """Returns a list of documents that have been released by Robinhood to the account.
 
     :param info: Will filter the results to get a specific value.
@@ -513,15 +514,14 @@ def get_documents(info=None):
 
     """
     url = documents_url()
-    data = request_get(url, 'pagination')
+    data = await request_get(url, 'pagination')
 
     return(filter_data(data, info))
 
 
-@login_required
-def download_document(url, name=None, dirpath=None):
-    """Downloads a document and saves as it as a PDF. If no name is given, document is saved as
-    the name that Robinhood has for the document. If no directory is given, document is saved in the root directory of code.
+async def download_document(url, name=None, dirpath=None):
+    """Downloads a document and saves it as a PDF. If no name is given, the document is saved as
+    the name that Robinhood has for the document. If no directory is given, the document is saved in the root directory of code.
 
     :param url: The url of the document. Can be found by using get_documents(info='download_url').
     :type url: str
@@ -530,9 +530,8 @@ def download_document(url, name=None, dirpath=None):
     :param dirpath: The directory of where to save the document.
     :type dirpath: Optional[str]
     :returns: Returns the data from the get request.
-
     """
-    data = request_document(url)
+    data = await request_document(url)
 
     print('Writing PDF...', file=get_output())
     if not name:
@@ -543,19 +542,21 @@ def download_document(url, name=None, dirpath=None):
     else:
         directory = 'robin_documents/'
 
-    filename = directory + name + ' .pdf'
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    filename = os.path.join(directory, name + '.pdf')
+    await aiofiles.os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    open(filename, 'wb').write(data.content)
-    print('Done - Wrote file {}.pdf to {}'.format(name, os.path.abspath(filename)))
+    async with aiofiles.open(filename, 'wb') as f:
+        await f.write(data)
+    
+    print(f'Done - Wrote file {name}.pdf to {os.path.abspath(filename)}')
 
-    return(data)
+    return data
 
 
 @login_required
-def download_all_documents(doctype=None, dirpath=None):
+async def download_all_documents(doctype=None, dirpath=None):
     """Downloads all the documents associated with an account and saves them as a PDF.
-    If no name is given, document is saved as a combination of the data of creation, type, and id.
+    If no name is given, document is saved as a combination of the date of creation, type, and id.
     If no directory is given, document is saved in the root directory of code.
 
     :param doctype: The type of document to download, such as account_statement.
@@ -563,9 +564,8 @@ def download_all_documents(doctype=None, dirpath=None):
     :param dirpath: The directory of where to save the documents.
     :type dirpath: Optional[str]
     :returns: Returns the list of documents from get_documents(info=None)
-
     """
-    documents = get_documents()
+    documents = await get_documents()
 
     downloaded_files = False
     if dirpath:
@@ -576,25 +576,27 @@ def download_all_documents(doctype=None, dirpath=None):
     counter = 0
     for item in documents:
         if doctype == None:
-            data = request_document(item['download_url'])
+            data = await request_document(item['download_url'])
             if data:
                 name = item['created_at'][0:10] + '-' + \
                     item['type'] + '-' + item['id']
                 filename = directory + name + '.pdf'
-                os.makedirs(os.path.dirname(filename), exist_ok=True)
-                open(filename, 'wb').write(data.content)
+                await aiofiles.os.makedirs(os.path.dirname(filename), exist_ok=True)
+                async with aiofiles.open(filename, 'wb') as f:
+                    await f.write(data)
                 downloaded_files = True
                 counter += 1
                 print('Writing PDF {}...'.format(counter), file=get_output())
         else:
             if item['type'] == doctype:
-                data = request_document(item['download_url'])
+                data = await request_document(item['download_url'])
                 if data:
                     name = item['created_at'][0:10] + '-' + \
                         item['type'] + '-' + item['id']
                     filename = directory + name + '.pdf'
-                    os.makedirs(os.path.dirname(filename), exist_ok=True)
-                    open(filename, 'wb').write(data.content)
+                    await aiofiles.os.makedirs(os.path.dirname(filename), exist_ok=True)
+                    async with aiofiles.open(filename, 'wb') as f:
+                        await f.write(data)
                     downloaded_files = True
                     counter += 1
                     print('Writing PDF {}...'.format(counter), file=get_output())
@@ -613,7 +615,7 @@ def download_all_documents(doctype=None, dirpath=None):
 
 
 @login_required
-def get_all_watchlists(info=None):
+async def get_all_watchlists(info=None):
     """Returns a list of all watchlists that have been created. Everyone has a 'My First List' watchlist.
 
     :param info: Will filter the results to get a specific value.
@@ -622,12 +624,12 @@ def get_all_watchlists(info=None):
 
     """
     url = watchlists_url()
-    data = request_get(url, 'result')
+    data = await request_get(url, 'result')
     return(filter_data(data, info))
 
 
 @login_required
-def get_watchlist_by_name(name="My First List", info=None):
+async def get_watchlist_by_name(name="My First List", info=None):
     """Returns a list of information related to the stocks in a single watchlist.
 
     :param name: The name of the watchlist to get data from.
@@ -639,19 +641,19 @@ def get_watchlist_by_name(name="My First List", info=None):
     """
 
     #Get id of requested watchlist
-    all_watchlists = get_all_watchlists()
+    all_watchlists = await get_all_watchlists()
     watchlist_id = ''
     for wl in all_watchlists['results']:
         if wl['display_name'] == name:
             watchlist_id = wl['id']
 
     url = watchlists_url(name)
-    data = request_get(url,'list_id',{'list_id':watchlist_id})
+    data = await request_get(url,'list_id',{'list_id':watchlist_id})
     return(filter_data(data, info))
 
 
 @login_required
-def post_symbols_to_watchlist(inputSymbols, name="My First List"):
+async def post_symbols_to_watchlist(inputSymbols, name="My First List"):
     """Posts multiple stock tickers to a watchlist.
 
     :param inputSymbols: May be a single stock ticker or a list of stock tickers.
@@ -662,10 +664,10 @@ def post_symbols_to_watchlist(inputSymbols, name="My First List"):
 
     """
     symbols = inputs_to_set(inputSymbols)
-    ids = get_instruments_by_symbols(symbols, info='id')
+    ids = await get_instruments_by_symbols(symbols, info='id')
     data = []
     #Get id of requested watchlist
-    all_watchlists = get_all_watchlists()
+    all_watchlists = await get_all_watchlists()
     watchlist_id = ''
     for wl in all_watchlists['results']:
         if wl['display_name'] == name:
@@ -680,13 +682,13 @@ def post_symbols_to_watchlist(inputSymbols, name="My First List"):
             }]
         }
         url = watchlists_url(name, True)
-        data.append(request_post(url, payload, json=True))
+        data.append(await request_post(url, payload, json=True))
 
     return(data)
 
 
 @login_required
-def delete_symbols_from_watchlist(inputSymbols, name="My First List"):
+async def delete_symbols_from_watchlist(inputSymbols, name="My First List"):
     """Deletes multiple stock tickers from a watchlist.
 
     :param inputSymbols: May be a single stock ticker or a list of stock tickers.
@@ -697,11 +699,11 @@ def delete_symbols_from_watchlist(inputSymbols, name="My First List"):
 
     """
     symbols = inputs_to_set(inputSymbols)
-    ids = get_instruments_by_symbols(symbols, info='id')
+    ids = await get_instruments_by_symbols(symbols, info='id')
     data = []
 
     #Get id of requested watchlist
-    all_watchlists = get_all_watchlists()
+    all_watchlists = await get_all_watchlists()
     watchlist_id = ''
     for wl in all_watchlists['results']:
         if wl['display_name'] == name:
@@ -716,13 +718,13 @@ def delete_symbols_from_watchlist(inputSymbols, name="My First List"):
             }]
         }
         url = watchlists_url(name, True)
-        data.append(request_post(url, payload, json=True))
+        data.append(await request_post(url, payload, json=True))
 
     return(data)
 
 
 @login_required
-def build_holdings(with_dividends=False):
+async def build_holdings(with_dividends=False):
     """Builds a dictionary of important information regarding the stocks and positions owned by the user.
 
     :param with_dividends: True if you want to include divident information.
@@ -732,13 +734,13 @@ def build_holdings(with_dividends=False):
     percentage of portfolio, and average buy price.
 
     """
-    positions_data = get_open_stock_positions()
-    portfolios_data = load_portfolio_profile()
-    accounts_data = load_account_profile()
+    positions_data = await get_open_stock_positions()
+    portfolios_data = await load_portfolio_profile()
+    accounts_data = await load_account_profile()
 
     # user wants dividend information in their holdings
     if with_dividends is True:
-        dividend_data = get_dividends()
+        dividend_data = await get_dividends()
 
     if not positions_data or not portfolios_data or not accounts_data:
         return({})
@@ -759,11 +761,11 @@ def build_holdings(with_dividends=False):
             continue
 
         try:
-            instrument_data = get_instrument_by_url(item['instrument'])
+            instrument_data = await get_instrument_by_url(item['instrument'])
             symbol = instrument_data['symbol']
-            fundamental_data = get_fundamentals(symbol)[0]
+            fundamental_data = await get_fundamentals(symbol)[0]
 
-            price = get_latest_price(instrument_data['symbol'])[0]
+            price = await get_latest_price(instrument_data['symbol'])[0]
             quantity = item['quantity']
             equity = float(item['quantity']) * float(price)
             equity_change = (float(quantity) * float(price)) - \
@@ -793,7 +795,7 @@ def build_holdings(with_dividends=False):
                 {'equity_change': "{0:2f}".format(equity_change)})
             holdings[symbol].update({'type': instrument_data['type']})
             holdings[symbol].update(
-                {'name': get_name_by_symbol(symbol)})
+                {'name': await get_name_by_symbol(symbol)})
             holdings[symbol].update({'id': instrument_data['id']})
             holdings[symbol].update({'pe_ratio': fundamental_data['pe_ratio']})
             holdings[symbol].update(
@@ -801,7 +803,7 @@ def build_holdings(with_dividends=False):
 
             if with_dividends is True:
                 # dividend_data was retrieved earlier
-                holdings[symbol].update(get_dividends_by_instrument(
+                holdings[symbol].update(await get_dividends_by_instrument(
                     item['instrument'], dividend_data))
 
         except:
@@ -811,7 +813,7 @@ def build_holdings(with_dividends=False):
 
 
 @login_required
-def build_user_profile(account_number=None):
+async def build_user_profile(account_number=None):
     """Builds a dictionary of important information regarding the user account.
 
     :returns: Returns a dictionary that has total equity, extended hours equity, cash, and divendend total.
@@ -819,8 +821,8 @@ def build_user_profile(account_number=None):
     """
     user = {}
 
-    portfolios_data = load_portfolio_profile(account_number=account_number)
-    accounts_data = load_account_profile(account_number=account_number)
+    portfolios_data = await load_portfolio_profile(account_number=account_number)
+    accounts_data = await load_account_profile(account_number=account_number)
 
     if portfolios_data:
         user['equity'] = portfolios_data['equity']
@@ -830,6 +832,6 @@ def build_user_profile(account_number=None):
         cash = "{0:.2f}".format(float(accounts_data['portfolio_cash'])) # float(accounts_data['cash']) + uncleared_deposits 
         user['cash'] = cash
 
-    user['dividend_total'] = get_total_dividends()
+    user['dividend_total'] = await get_total_dividends()
 
     return(user)
