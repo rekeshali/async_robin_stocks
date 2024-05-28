@@ -79,7 +79,7 @@ from .stocks import (find_instrument_data, get_earnings, get_events,
                      get_symbol_by_url)
 
        
-class AsyncRobinStocksClient:
+class AsyncIORobinStocksClient:
     LOGGED_IN = False
 
     # Initial headers for the session
