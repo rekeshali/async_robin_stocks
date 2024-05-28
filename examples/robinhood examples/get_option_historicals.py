@@ -1,4 +1,4 @@
-from robin_stocks.robinhood import AsyncIORobinStocksClient
+from async_robin_stocks.robinhood import AsyncIORobinStocksClient
 import matplotlib.pyplot as plt
 import datetime as dt
 import asyncio

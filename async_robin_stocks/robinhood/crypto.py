@@ -1,6 +1,6 @@
 """Contains functions to get information about crypto-currencies."""
-from robin_stocks.robinhood.helper import *
-from robin_stocks.robinhood.urls import *
+from async_robin_stocks.robinhood.helper import *
+from async_robin_stocks.robinhood.urls import *
 
 @login_required
 async def load_crypto_profile(client, info=None):

@@ -1,11 +1,11 @@
 """Contains all functions for placing orders for stocks, options, and crypto."""
 from uuid import uuid4
 
-from robin_stocks.robinhood.crypto import *
-from robin_stocks.robinhood.helper import *
-from robin_stocks.robinhood.profiles import *
-from robin_stocks.robinhood.stocks import *
-from robin_stocks.robinhood.urls import *
+from async_robin_stocks.robinhood.crypto import *
+from async_robin_stocks.robinhood.helper import *
+from async_robin_stocks.robinhood.profiles import *
+from async_robin_stocks.robinhood.stocks import *
+from async_robin_stocks.robinhood.urls import *
 
 @login_required
 async def get_all_stock_orders(client, info=None):

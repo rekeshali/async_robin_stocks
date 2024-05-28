@@ -6,8 +6,8 @@ import random
 import aiofiles
 import asyncio
 
-from robin_stocks.robinhood.helper import *
-from robin_stocks.robinhood.urls import *
+from async_robin_stocks.robinhood.helper import *
+from async_robin_stocks.robinhood.urls import *
 
 def generate_device_token():
     """This function will generate a token used when loggin on.
