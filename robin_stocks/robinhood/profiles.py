@@ -70,7 +70,7 @@ async def load_account_profile(client, account_number=None, info=None, dataType=
          data = await request_get(client, url)
     else:
         data = await request_get(client, url, dataType)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -101,7 +101,7 @@ async def load_basic_profile(client, info=None):
     """
     url = basic_profile_url()
     data = await request_get(client, url)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -136,7 +136,7 @@ async def load_investment_profile(client, info=None):
     """
     url = investment_profile_url()
     data = await request_get(client, url)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -178,7 +178,7 @@ async def load_portfolio_profile(client, account_number=None, info=None):
         data = await request_get(client, url)
     else:
         data = await request_get(client, url, 'indexzero')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -211,7 +211,7 @@ async def load_security_profile(client, info=None):
     """
     url = security_profile_url()
     data = await request_get(client, url)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -239,4 +239,4 @@ async def load_user_profile(client, info=None):
     """
     url = user_profile_url()
     data = await request_get(client, url)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))

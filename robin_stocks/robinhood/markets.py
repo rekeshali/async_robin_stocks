@@ -22,18 +22,18 @@ async def get_top_movers_sp500(client, direction, info=None):
     try:
         direction = direction.lower().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     if (direction != 'up' and direction != 'down'):
-        print('Error: direction must be "up" or "down"', file=get_output())
+        await client.logger.error('direction must be "up" or "down"')
         return([None])
 
     url = movers_sp500_url()
     payload = {'direction': direction}
     data = await request_get(client, url, 'pagination', payload)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 async def get_top_100(client, info=None):
     """Returns a list of the Top 100 stocks on Robin Hood.
@@ -61,12 +61,12 @@ async def get_top_100(client, info=None):
     """
     url = get_100_most_popular_url()
     data = await request_get(client, url, 'regular')
-    data = filter_data(data, 'instruments')
+    data = await filter_data(client, data, 'instruments')
 
     symbols = [get_symbol_by_url(x) for x in data]
     data = await get_quotes(client, symbols)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 async def get_top_movers(client, info=None):
     """Returns a list of the Top 20 movers on Robin Hood.
@@ -94,12 +94,12 @@ async def get_top_movers(client, info=None):
     """
     url = movers_top_url()
     data = await request_get(client, url, 'regular')
-    data = filter_data(data, 'instruments')
+    data = await filter_data(client, data, 'instruments')
 
     symbols = [get_symbol_by_url(x) for x in data]
     data = await get_quotes(client, symbols)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 async def get_all_stocks_from_market_tag(client, tag, info=None):
     """Returns all the stock quote information that matches a tag category.
@@ -129,16 +129,16 @@ async def get_all_stocks_from_market_tag(client, tag, info=None):
     """
     url = market_category_url(tag)
     data = await request_get(client, url, 'regular')
-    data = filter_data(data, 'instruments')
+    data = await filter_data(client, data, 'instruments')
 
     if not data:
-        print('ERROR: "{}" is not a valid tag'.format(tag), file=get_output())
+        await client.logger.error('ERROR: "{}" is not a valid tag'.format(tag))
         return [None]
 
     symbols = [get_symbol_by_url(x) for x in data]
     data = await get_quotes(client, symbols)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 async def get_markets(client, info=None):
     """Returns a list of available markets.
@@ -161,7 +161,7 @@ async def get_markets(client, info=None):
     """
     url = markets_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 async def get_market_today_hours(client, market, info=None):
     """Returns the opening and closing hours of a specific market for today. Also will tell you if market is
@@ -190,7 +190,7 @@ async def get_market_today_hours(client, market, info=None):
 
     url = result['todays_hours']
     data = await request_get(client, url, 'regular')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 async def get_market_next_open_hours(client, market, info=None):
     """Returns the opening and closing hours for the next open trading day after today. Also will tell you if market is
@@ -214,7 +214,7 @@ async def get_market_next_open_hours(client, market, info=None):
     """
     url = await get_market_today_hours(client, market, info='next_open_hours')
     data = await request_get(client, url, 'regular')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 async def get_market_next_open_hours_after_date(client, market, date, info=None):
     """Returns the opening and closing hours for the next open trading day after a date that is specified. Also will tell you if market is
@@ -240,7 +240,7 @@ async def get_market_next_open_hours_after_date(client, market, date, info=None)
     """
     url = await get_market_hours(client, market, date, info='next_open_hours')
     data = await request_get(client, url, 'regular')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 async def get_market_hours(client, market, date, info=None):
     """Returns the opening and closing hours of a specific market on a specific date. Also will tell you if market is
@@ -266,7 +266,7 @@ async def get_market_hours(client, market, date, info=None):
     """
     url = market_hours_url(market, date)
     data = await request_get(client, url, 'regular')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_currency_pairs(client, info=None):
@@ -291,4 +291,4 @@ async def get_currency_pairs(client, info=None):
     """
     url = currency_url()
     data = await request_get(client, url, 'results')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))

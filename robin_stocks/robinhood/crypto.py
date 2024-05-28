@@ -23,7 +23,7 @@ async def load_crypto_profile(client, info=None):
     """
     url = crypto_account_url()
     data = await request_get(client, url, 'indexzero')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -48,7 +48,7 @@ async def get_crypto_positions(client, info=None):
     """
     url = crypto_holdings_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_crypto_currency_pairs(client, info=None):
@@ -73,7 +73,7 @@ async def get_crypto_currency_pairs(client, info=None):
     """
     url = crypto_currency_pairs_url()
     data = await request_get(client, url, 'results')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_crypto_info(client, symbol, info=None):
@@ -105,7 +105,7 @@ async def get_crypto_info(client, symbol, info=None):
         data = data[0]
     else:
         data = None
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 SYMBOL_TO_ID_CACHE = {}
@@ -150,7 +150,7 @@ async def get_crypto_quote(client, symbol, info=None):
     id = await get_crypto_info(client, symbol, info='id')
     url = crypto_quote_url(id)
     data = await request_get(client, url)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -176,7 +176,7 @@ async def get_crypto_quote_from_id(client, id, info=None):
     """
     url = crypto_quote_url(id)
     data = await request_get(client, url)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -212,17 +212,16 @@ async def get_crypto_historicals(client, symbol, interval='hour', span='week', b
     bounds_check = ['24_7', 'extended', 'regular', 'trading']
 
     if interval not in interval_check:
-        print(
-            'ERROR: Interval must be "15second","5minute","10minute","hour","day",or "week"', file=get_output())
+        await client.logger.error('ERROR: Interval must be "15second","5minute","10minute","hour","day",or "week"')
         return([None])
     if span not in span_check:
-        print('ERROR: Span must be "hour","day","week","month","3month","year",or "5year"', file=get_output())
+        await client.logger.error('ERROR: Span must be "hour","day","week","month","3month","year",or "5year"')
         return([None])
     if bounds not in bounds_check:
-        print('ERROR: Bounds must be "24_7","extended","regular",or "trading"', file=get_output())
+        await client.logger.error('ERROR: Bounds must be "24_7","extended","regular",or "trading"')
         return([None])
     if (bounds == 'extended' or bounds == 'trading') and span != 'day':
-        print('ERROR: extended and trading bounds can only be used with a span of "day"', file=get_output())
+        await client.logger.error('ERROR: extended and trading bounds can only be used with a span of "day"')
         return([None])
 
 
@@ -240,4 +239,4 @@ async def get_crypto_historicals(client, symbol, interval='hour', span='week', b
         subitem['symbol'] = cryptoSymbol
         histData.append(subitem)
 
-    return(filter_data(histData, info))
+    return(await filter_data(client, histData, info))

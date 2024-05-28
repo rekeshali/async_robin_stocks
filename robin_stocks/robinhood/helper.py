@@ -1,20 +1,7 @@
 """Contains decorator functions and functions for interacting with global data.
 """
 from functools import wraps
-
 import aiohttp
-from robin_stocks.robinhood.globals import OUTPUT
-
-
-def set_output(output):
-    """Sets the global output stream"""
-    global OUTPUT
-    OUTPUT = output
-    
-def get_output():
-    """Gets the current global output stream"""
-    global OUTPUT
-    return OUTPUT
 
 def login_required(func):
     """A decorator for indicating which methods require the user to be logged
@@ -52,14 +39,14 @@ async def id_for_stock(client, symbol):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return(None)
 
     url = 'https://api.robinhood.com/instruments/'
     payload = {'symbol': symbol}
-    data = request_get(client, url, 'indexzero', payload)
+    data = await request_get(client, url, 'indexzero', payload)
 
-    return(filter_data(data, 'id'))
+    return(await filter_data(client, data, 'id'))
 
 
 async def id_for_chain(client, symbol):
@@ -72,7 +59,7 @@ async def id_for_chain(client, symbol):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     url = 'https://api.robinhood.com/instruments/'
@@ -95,7 +82,7 @@ async def id_for_group(client, symbol):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     url = 'https://api.robinhood.com/options/chains/{0}/'.format(await id_for_chain(client, symbol))
@@ -130,7 +117,7 @@ async def id_for_option(client, symbol, expirationDate, strike, optionType):
 
     listOfOptions = [item for item in data if item["expiration_date"] == expirationDate]
     if len(listOfOptions) == 0:
-        print('Getting the option ID failed. Perhaps the expiration date is wrong format, or the strike price is wrong.', file=get_output())
+        await client.logger.warning('Getting the option ID failed. Perhaps the expiration date is wrong format, or the strike price is wrong.')
         return None
 
     return listOfOptions[0]['id']
@@ -155,7 +142,7 @@ def round_price(price):
     return returnPrice
 
 
-def filter_data(data, info):
+async def filter_data(client, data, info):
     """Takes the data and extracts the value for the keyword that matches info.
 
     :param data: The data returned by request_get.
@@ -184,7 +171,7 @@ def filter_data(data, info):
         elif info in compareDict and type(data) == dict:
             return(data[info])
         else:
-            print(error_argument_not_key_in_dictionary(info), file=get_output())
+            await client.logger.warning(error_argument_not_key_in_dictionary(info))
             return(noneType)
     else:
         return(data)
@@ -231,7 +218,7 @@ async def request_document(client, url, payload=None):
         async with client.SESSION.get(url, params=payload, headers=client.HEADERS) as res:
             res.raise_for_status()
     except aiohttp.ClientResponseError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     return res
@@ -264,7 +251,7 @@ async def request_get(client, url, dataType='regular', payload=None, jsonify_dat
                 res.raise_for_status()
                 data = await res.json()
         except (aiohttp.ClientResponseError, AttributeError) as message:
-            print(message, file=get_output())
+            await client.logger.error(message)
             return(data)
     else:
         async with client.SESSION.get(url, params=payload, headers=client.HEADERS) as res:
@@ -275,7 +262,7 @@ async def request_get(client, url, dataType='regular', payload=None, jsonify_dat
         try:
             data = data['results']
         except KeyError as message:
-            print("{0} is not a key in the dictionary".format(message), file=get_output())
+            await client.logger.error("{0} is not a key in the dictionary".format(message))
             return([None])
     elif (dataType == 'pagination'):
         counter = 2
@@ -283,20 +270,20 @@ async def request_get(client, url, dataType='regular', payload=None, jsonify_dat
         try:
             data = data['results']
         except KeyError as message:
-            print("{0} is not a key in the dictionary".format(message), file=get_output())
+            await client.logger.error("{0} is not a key in the dictionary".format(message))
             return([None])
 
         if nextData['next']:
-            print('Found Additional pages.', file=get_output())
+            await client.logger.debug('Found Additional pages.')
         while nextData['next']:
             try:
                 async with client.SESSION.get(nextData['next'], headers=client.HEADERS) as res:
                     res.raise_for_status()
                     nextData = await res.json()
             except:
-                print('Additional pages exist but could not be loaded.', file=get_output())
+                await client.logger.warning('Additional pages exist but could not be loaded.')
                 return(data)
-            print('Loading page '+str(counter)+' ...', file=get_output())
+            await client.logger.debug('Loading page '+str(counter)+' ...')
             counter += 1
             for item in nextData['results']:
                 data.append(item)
@@ -304,7 +291,7 @@ async def request_get(client, url, dataType='regular', payload=None, jsonify_dat
         try:
             data = data['results'][0]
         except KeyError as message:
-            print("{0} is not a key in the dictionary".format(message), file=get_output())
+            await client.logger.error("{0} is not a key in the dictionary".format(message))
             return(None)
         except IndexError as message:
             return(None)
@@ -345,7 +332,7 @@ async def request_post(client, url, payload=None, timeout=16, json=False, jsonif
                 data = await res.json()            
 
     except Exception as message:
-        print("Error in request_post: {0}".format(message), file=get_output())
+        await client.logger.error("Error in request_post: {0}".format(message))
         
     if jsonify_data:
         return data
@@ -367,18 +354,18 @@ async def request_delete(client, url):
             data = await res.json()
     except Exception as message:
         data = None
-        print(f"Error in request_delete: {message}", file=get_output())
+        await client.logger.error(f"Error in request_delete: {message}")
         
     return data
 
 
 def error_argument_not_key_in_dictionary(keyword):
-    return('Error: The keyword "{0}" is not a key in the dictionary.'.format(keyword))
+    return('The keyword "{0}" is not a key in the dictionary.'.format(keyword))
 
 
 def error_ticker_does_not_exist(ticker):
-    return('Warning: "{0}" is not a valid stock ticker. It is being ignored'.format(ticker))
+    return('"{0}" is not a valid stock ticker. It is being ignored'.format(ticker))
 
 
 def error_must_be_nonzero(keyword):
-    return('Error: The input parameter "{0}" must be an integer larger than zero and non-negative'.format(keyword))
+    return('The input parameter "{0}" must be an integer larger than zero and non-negative'.format(keyword))

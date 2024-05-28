@@ -49,7 +49,7 @@ async def load_phoenix_account(client, info=None):
     """
     url = phoenix_url()
     data = await request_get(client, url, 'regular')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def get_historical_portfolio(client, interval=None, span='week', bounds='regular',info=None):
@@ -59,19 +59,18 @@ async def get_historical_portfolio(client, interval=None, span='week', bounds='r
 
     if interval not in interval_check:
         if interval is None and (bounds != 'regular' and span != 'all'):
-            print ('ERROR: Interval must be None for "all" span "regular" bounds', file=get_output())
+            await client.logger.error('Interval must be None for "all" span "regular" bounds')
             return ([None])
-        print(
-            'ERROR: Interval must be "5minute","10minute","hour","day",or "week"', file=get_output())
+        await client.logger.error('Interval must be "5minute","10minute","hour","day",or "week"')
         return([None])
     if span not in span_check:
-        print('ERROR: Span must be "day","week","month","3month","year",or "5year"', file=get_output())
+        await client.logger.error('Span must be "day","week","month","3month","year",or "5year"')
         return([None])
     if bounds not in bounds_check:
-        print('ERROR: Bounds must be "extended","regular",or "trading"')
+        await client.logger.error('Bounds must be "extended","regular",or "trading"')
         return([None])
     if (bounds == 'extended' or bounds == 'trading') and span != 'day':
-        print('ERROR: extended and trading bounds can only be used with a span of "day"', file=get_output())
+        await client.logger.error('Extended and trading bounds can only be used with a span of "day"')
         return([None])
 
     account = load_account_profile(info='account_number')
@@ -83,7 +82,7 @@ async def get_historical_portfolio(client, interval=None, span='week', bounds='r
     }
     data = await request_get(client, url, 'regular', payload)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def get_all_positions(client, info=None):
@@ -115,7 +114,7 @@ async def get_all_positions(client, info=None):
     url = positions_url()
     data = await request_get(client, url, 'pagination')
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -151,7 +150,7 @@ async def get_open_stock_positions(client, account_number=None, info=None):
     payload = {'nonzero': 'true'}
     data = await request_get(client, url, 'pagination', payload)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -182,7 +181,7 @@ async def get_dividends(client, info=None):
     url = dividends_url()
     data = await request_get(client, url, 'pagination')
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -244,7 +243,7 @@ async def get_notifications(client, info=None):
     url = notifications_url()
     data = await request_get(client, url, 'pagination')
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -271,7 +270,7 @@ async def get_wire_transfers(client, info=None):
     """
     url = wiretransfers_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -288,7 +287,7 @@ async def get_margin_calls(client, symbol=None):
         try:
             symbol = symbol.upper().strip()
         except AttributeError as message:
-            print(message, file=get_output())
+            await client.logger.error(message)
             return None
         payload = {'equity_instrument_id', id_for_stock(symbol)}
         data = await request_get(client, url, 'results', payload)
@@ -319,7 +318,7 @@ async def withdrawl_funds_to_bank_account(client, ach_relationship, amount, info
         "ref_id": str(uuid4())
     }
     data = await request_post(client, url, payload)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -343,7 +342,7 @@ async def deposit_funds_to_robinhood_account(client, ach_relationship, amount, i
         "ref_id": str(uuid4())
     }
     data = await request_post(client, url, payload)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def get_linked_bank_accounts(client, info=None):
@@ -356,7 +355,7 @@ async def get_linked_bank_accounts(client, info=None):
     """
     url = linked_url()
     data = await request_get(client, url, 'results')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -373,7 +372,7 @@ async def get_bank_account_info(client, id, info=None):
     """
     url = linked_url(id)
     data = await request_get(client, url)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -406,7 +405,7 @@ async def get_bank_transfers(client, direction=None, info=None):
     """
     url = banktransfers_url(direction)
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def get_card_transactions(client, cardType=None, info=None):
@@ -426,7 +425,7 @@ async def get_card_transactions(client, cardType=None, info=None):
 
     url = cardtransactions_url()
     data = await request_get(client, url, 'pagination', payload)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def get_stock_loan_payments(client, info=None):
@@ -440,7 +439,7 @@ async def get_stock_loan_payments(client, info=None):
     """
     url = stockloan_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -455,7 +454,7 @@ async def get_margin_interest(client, info=None):
     """
     url = margininterest_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -470,7 +469,7 @@ async def get_subscription_fees(client, info=None):
     """
     url = subscription_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -485,7 +484,7 @@ async def get_referrals(client, info=None):
     """
     url = referral_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -501,7 +500,7 @@ async def get_day_trades(client, info=None):
     account = load_account_profile(info='account_number')
     url = daytrades_url(account)
     data = await request_get(client, url, 'regular')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -517,7 +516,7 @@ async def get_documents(client, info=None):
     url = documents_url()
     data = await request_get(client, url, 'pagination')
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def download_document(client, url, name=None, dirpath=None):
@@ -534,7 +533,7 @@ async def download_document(client, url, name=None, dirpath=None):
     """
     data = await request_document(client, url)
 
-    print('Writing PDF...', file=get_output())
+    await client.logger.info('Writing PDF...')
     if not name:
         name = url[36:].split('/', 1)[0]
 
@@ -549,7 +548,7 @@ async def download_document(client, url, name=None, dirpath=None):
     async with aiofiles.open(filename, 'wb') as f:
         await f.write(data)
     
-    print(f'Done - Wrote file {name}.pdf to {os.path.abspath(filename)}')
+    await client.logger.info(f'Done - Wrote file {name}.pdf to {os.path.abspath(filename)}')
 
     return data
 
@@ -587,7 +586,7 @@ async def download_all_documents(client, doctype=None, dirpath=None):
                     await f.write(data)
                 downloaded_files = True
                 counter += 1
-                print('Writing PDF {}...'.format(counter), file=get_output())
+                await client.logger.info('Writing PDF {}...'.format(counter))
         else:
             if item['type'] == doctype:
                 data = await request_document(client, item['download_url'])
@@ -600,17 +599,17 @@ async def download_all_documents(client, doctype=None, dirpath=None):
                         await f.write(data)
                     downloaded_files = True
                     counter += 1
-                    print('Writing PDF {}...'.format(counter), file=get_output())
+                    await client.logger.info('Writing PDF {}...'.format(counter))
 
     if downloaded_files == False:
-        print('WARNING: Could not find files of that doctype to download', file=get_output())
+        await client.logger.warning('Could not find files of that doctype to download')
     else:
         if counter == 1:
-            print('Done - wrote {} file to {}'.format(counter,
-                                                      os.path.abspath(directory)), file=get_output())
+            await client.logger.info('Done - wrote {} file to {}'.format(counter,
+                                                      os.path.abspath(directory)))
         else:
-            print('Done - wrote {} files to {}'.format(counter,
-                                                       os.path.abspath(directory)), file=get_output())
+            await client.logger.info('Done - wrote {} files to {}'.format(counter,
+                                                       os.path.abspath(directory)))
 
     return(documents)
 
@@ -626,7 +625,7 @@ async def get_all_watchlists(client, info=None):
     """
     url = watchlists_url()
     data = await request_get(client, url, 'result')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -650,7 +649,7 @@ async def get_watchlist_by_name(client, name="My First List", info=None):
 
     url = watchlists_url(name)
     data = await request_get(client, url,'list_id',{'list_id':watchlist_id})
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required

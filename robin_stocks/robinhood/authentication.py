@@ -138,8 +138,8 @@ async def login(client, username=None, password=None, expiresIn=86400, scope='in
                             'expires_in': expiresIn, 'scope': scope, 'detail': 'logged in using authentication in {0}'.format(creds_file),
                             'backup_code': None, 'refresh_token': refresh_token})
             except:
-                print(
-                    "ERROR: There was an issue loading pickle file. Authentication may be expired - logging in normally.", file=get_output())
+                await client.loger.error(
+                    "There was an issue loading pickle file. Authentication may be expired - logging in normally.")
                 client.set_login_state(False)
                 client.update_session('Authorization', None)
         else:

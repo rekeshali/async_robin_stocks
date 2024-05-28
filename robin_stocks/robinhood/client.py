@@ -1,4 +1,5 @@
 import aiohttp
+from aiologger import Logger
 
 from .account import (build_holdings, build_user_profile,
                       delete_symbols_from_watchlist,
@@ -93,7 +94,8 @@ class AsyncIORobinStocksClient:
         "User-Agent": "*"
     }
 
-    def __init__(self):
+    def __init__(self, logger=None):
+        self.logger = logger if logger else Logger.with_default_handlers(name="async-robin-stocks-client")
         self.SESSION = aiohttp.ClientSession(headers=self.HEADERS)
 
     async def close(self):

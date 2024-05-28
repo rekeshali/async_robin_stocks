@@ -19,7 +19,7 @@ async def get_all_stock_orders(client, info=None):
     """
     url = orders_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -34,7 +34,7 @@ async def get_all_option_orders(client, info=None):
     """
     url = option_orders_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -49,7 +49,7 @@ async def get_all_crypto_orders(client, info=None):
     """
     url = crypto_orders_url()
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -67,7 +67,7 @@ async def get_all_open_stock_orders(client, info=None, account_number=None):
 
     data = [item for item in data if item['cancel'] is not None]
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -85,7 +85,7 @@ async def get_all_open_option_orders(client, info=None, account_number=None):
 
     data = [item for item in data if item['cancel_url'] is not None]
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -103,7 +103,7 @@ async def get_all_open_crypto_orders(client, info=None):
 
     data = [item for item in data if item['cancel_url'] is not None]
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -180,7 +180,7 @@ async def find_stock_orders(client, **arguments):
     for item in data:
         for i, (key, value) in enumerate(arguments.items()):
             if key not in item:
-                print(error_argument_not_key_in_dictionary(key), file=get_output())
+                await client.logger.error(error_argument_not_key_in_dictionary(key))
                 return([None])
             if value != item[key]:
                 break
@@ -203,7 +203,7 @@ async def cancel_stock_order(client, orderID):
     data = await request_post(client, url)
 
     if data:
-        print('Order '+str(orderID)+' cancelled', file=get_output())
+        await client.logger.info('Order '+str(orderID)+' cancelled')
     return(data)
 
 
@@ -220,7 +220,7 @@ async def cancel_option_order(client, orderID):
     data = await request_post(client, url)
 
     if data:
-        print('Order '+str(orderID)+' cancelled', file=get_output())
+        await client.logger.info('Order '+str(orderID)+' cancelled')
     return(data)
 
 
@@ -237,7 +237,7 @@ async def cancel_crypto_order(client, orderID):
     data = await request_post(client, url)
 
     if data:
-        print('Order '+str(orderID)+' cancelled', file=get_output())
+        await client.logger.info('Order '+str(orderID)+' cancelled')
     return(data)
 
 
@@ -256,7 +256,7 @@ async def cancel_all_stock_orders(client):
     for item in data:
         await request_post(client, item['cancel'])
 
-    print('All Stock Orders Cancelled', file=get_output())
+    await client.logger.info('All Stock Orders Cancelled')
     return(data)
 
 
@@ -275,7 +275,7 @@ async def cancel_all_option_orders(client):
     for item in data:
         await request_post(client, item['cancel_url'])
 
-    print('All Option Orders Cancelled', file=get_output())
+    await client.logger.info('All Option Orders Cancelled')
     return(data)
 
 
@@ -294,7 +294,7 @@ async def cancel_all_crypto_orders(client):
     for item in data:
         await request_post(client, item['cancel_url'])
 
-    print('All Crypto Orders Cancelled', file=get_output())
+    await client.logger.info('All Crypto Orders Cancelled')
     return(data)
 
 
@@ -373,7 +373,7 @@ async def order_buy_fractional_by_price(client, symbol, amountInDollars, account
 
     """ 
     if amountInDollars < 1:
-        print("ERROR: Fractional share price should meet minimum 1.00.", file=get_output())
+        await client.logger.error("Fractional share price should meet minimum 1.00.")
         return None
 
     # turn the money amount into decimal number of shares
@@ -571,7 +571,7 @@ async def order_sell_fractional_by_price(client, symbol, amountInDollars, accoun
 
     """ 
     if amountInDollars < 1:
-        print("ERROR: Fractional share price should meet minimum 1.00.", file=get_output())
+        await client.logger.error("Fractional share price should meet minimum 1.00.")
         return None
     # turn the money amount into decimal number of shares
     price = next(iter(await get_latest_price(client, symbol, 'bid_price', extendedHours)), 0.00)
@@ -725,7 +725,7 @@ async def order_trailing_stop(client, symbol, quantity, side, trailAmount, trail
         symbol = symbol.upper().strip()
         trailAmount = float(trailAmount)
     except AttributeError as message:
-        print(message)
+        await client.logger.error(message)
         return None
 
     stock_price = round_price(await get_latest_price(client, symbol, extendedHours)[0])
@@ -739,7 +739,7 @@ async def order_trailing_stop(client, symbol, quantity, side, trailAmount, trail
             margin = stock_price * trailAmount * 0.01
             percentage = trailAmount
     except Exception as e:
-        print('ERROR: {}'.format(e))
+        await client.logger.error('{}'.format(e))
         return None
 
     stopPrice = stock_price + margin if side == "buy" else stock_price - margin
@@ -805,7 +805,7 @@ async def order(client, symbol, quantity, side, limitPrice=None, stopPrice=None,
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     orderType = "market"
@@ -873,7 +873,6 @@ async def order(client, symbol, quantity, side, limitPrice=None, stopPrice=None,
         payload['quantity']=int(payload['quantity']) # round to integer instead of fractional
         
     url = orders_url()
-    # print(payload)
     data = await request_post(client, url, payload, jsonify_data=jsonify)
 
     return(data)
@@ -977,7 +976,7 @@ async def order_option_spread(client, direction, price, symbol, quantity, spread
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
     legs = []
     for each in spread:
@@ -1045,7 +1044,7 @@ async def order_buy_option_limit(client, positionEffect, creditOrDebit, price, s
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     optionID = await id_for_option(client, symbol, expirationDate, strike, optionType)
@@ -1068,7 +1067,6 @@ async def order_buy_option_limit(client, positionEffect, creditOrDebit, price, s
     }
 
     url = option_orders_url()
-    # print(payload)
     data = await request_post(client, url, payload, json=True, jsonify_data=jsonify)
 
     return(data)
@@ -1111,7 +1109,7 @@ async def order_buy_option_stop_limit(client, positionEffect, creditOrDebit, lim
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     optionID = await id_for_option(client, symbol, expirationDate, strike, optionType)
@@ -1176,7 +1174,7 @@ async def order_sell_option_stop_limit(client, positionEffect, creditOrDebit, li
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     optionID = await id_for_option(client, symbol, expirationDate, strike, optionType)
@@ -1240,7 +1238,7 @@ async def order_sell_option_limit(client, positionEffect, creditOrDebit, price, 
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     optionID = await id_for_option(client, symbol, expirationDate, strike, optionType)
@@ -1471,7 +1469,7 @@ async def order_crypto(client, symbol, side, quantityOrPrice, amountIn="quantity
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     crypto_id = await get_crypto_id(client, symbol)

@@ -40,11 +40,11 @@ async def get_quotes(client, inputSymbols, info=None):
 
     for count, item in enumerate(data):
         if item is None:
-            print(error_ticker_does_not_exist(symbols[count]), file=get_output())
+            await client.logger.warning(error_ticker_does_not_exist(symbols[count]))
 
     data = [item for item in data if item is not None]
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_fundamentals(client, inputSymbols, info=None):
@@ -93,13 +93,13 @@ async def get_fundamentals(client, inputSymbols, info=None):
 
     for count, item in enumerate(data):
         if item is None:
-            print(error_ticker_does_not_exist(symbols[count]), file=get_output())
+            await client.logger.warning(error_ticker_does_not_exist(symbols[count]))
         else:
             item['symbol'] = symbols[count]
 
     data = [item for item in data if item is not None]
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_instruments_by_symbols(client, inputSymbols, info=None):
@@ -148,9 +148,9 @@ async def get_instruments_by_symbols(client, inputSymbols, info=None):
         if itemData:
             data.append(itemData)
         else:
-            print(error_ticker_does_not_exist(item), file=get_output())
+            await client.logger.warning(error_ticker_does_not_exist(item))
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_instrument_by_url(client, url, info=None):
@@ -192,7 +192,7 @@ async def get_instrument_by_url(client, url, info=None):
     """
     data = await request_get(client, url, 'regular')
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_latest_price(client, inputSymbols, priceType=None, includeExtendedHours=True):
@@ -220,7 +220,7 @@ async def get_latest_price(client, inputSymbols, priceType=None, includeExtended
                 prices.append(item['bid_price'])
             else:
                 if priceType:
-                    print('WARNING: priceType should be "ask_price" or "bid_price". You entered "{0}"'.format(priceType), file=get_output())
+                    await client.logger.warning('priceType should be "ask_price" or "bid_price". You entered "{0}"'.format(priceType))
                 if item['last_extended_hours_trade_price'] is None or not includeExtendedHours:
                     prices.append(item['last_trade_price'])
                 else:
@@ -242,7 +242,7 @@ async def get_name_by_symbol(client, symbol):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     url = instruments_url()
@@ -251,9 +251,9 @@ async def get_name_by_symbol(client, symbol):
     if not data:
         return(None)
     # If stock doesn't have a simple name attribute then get the full name.
-    filter = filter_data(data, info='simple_name')
+    filter = await filter_data(client, data, info='simple_name')
     if not filter or filter == "":
-        filter = filter_data(data, info='name')
+        filter = await filter_data(client, data, info='name')
     return(filter)
 
 
@@ -272,9 +272,9 @@ async def get_name_by_url(client, url):
     if not data:
         return(None)
     # If stock doesn't have a simple name attribute then get the full name.
-    filter = filter_data(data, info='simple_name')
+    filter = await filter_data(client, data, info='simple_name')
     if not filter or filter == "":
-        filter = filter_data(data, info='name')
+        filter = await filter_data(client, data, info='name')
     return(filter)
 
 
@@ -290,7 +290,7 @@ async def get_symbol_by_url(client, url):
 
     """
     data = await request_get(client, url)
-    return filter_data(data, info='symbol')
+    return await filter_data(client, data, info='symbol')
 
 @convert_none_to_string
 async def get_ratings(client, symbol, info=None):
@@ -312,7 +312,7 @@ async def get_ratings(client, symbol, info=None):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     url = await ratings_url(client, symbol)
@@ -327,7 +327,7 @@ async def get_ratings(client, symbol, info=None):
             oldText = item['text']
             item['text'] = oldText.encode('UTF-8')
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
     
 
 async def get_events(client, symbol, info=None):
@@ -362,14 +362,14 @@ async def get_events(client, symbol, info=None):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     payload = {'equity_instrument_id': await id_for_stock(client, symbol)}
     url = events_url()
     data = await request_get(client, url, 'results', payload)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_earnings(client, symbol, info=None):
@@ -394,14 +394,14 @@ async def get_earnings(client, symbol, info=None):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     url = earnings_url()
     payload = {'symbol': symbol}
     data = await request_get(client, url, 'results', payload)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_news(client, symbol, info=None):
@@ -434,13 +434,13 @@ async def get_news(client, symbol, info=None):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     url = news_url(symbol)
     data = await request_get(client, url, 'results')
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_splits(client, symbol, info=None):
@@ -464,12 +464,12 @@ async def get_splits(client, symbol, info=None):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     url = await splits_url(client, symbol)
     data = await request_get(client, url, 'results')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def find_instrument_data(client, query):
@@ -510,10 +510,10 @@ async def find_instrument_data(client, query):
     data = await request_get(client, url, 'pagination', payload)
 
     if len(data) == 0:
-        print('No results found for that keyword', file=get_output())
+        await client.logger.error('No results found for that keyword')
         return([None])
     else:
-        print('Found ' + str(len(data)) + ' results', file=get_output())
+        await client.logger.debug('Found ' + str(len(data)) + ' results')
         return(data)
 
 
@@ -548,17 +548,16 @@ async def get_stock_historicals(client, inputSymbols, interval='hour', span='wee
     bounds_check = ['extended', 'regular', 'trading']
 
     if interval not in interval_check:
-        print(
-            'ERROR: Interval must be "5minute","10minute","hour","day",or "week"', file=get_output())
+        await client.logger.error('Interval must be "5minute","10minute","hour","day",or "week"')
         return([None])
     if span not in span_check:
-        print('ERROR: Span must be "day","week","month","3month","year",or "5year"', file=get_output())
+        await client.logger.error('Span must be "day","week","month","3month","year",or "5year"')
         return([None])
     if bounds not in bounds_check:
-        print('ERROR: Bounds must be "extended","regular",or "trading"', file=get_output())
+        await client.logger.error('Bounds must be "extended","regular",or "trading"')
         return([None])
     if (bounds == 'extended' or bounds == 'trading') and span != 'day':
-        print('ERROR: extended and trading bounds can only be used with a span of "day"', file=get_output())
+        await client.logger.error('extended and trading bounds can only be used with a span of "day"')
         return([None])
 
     symbols = inputs_to_set(inputSymbols)
@@ -575,14 +574,14 @@ async def get_stock_historicals(client, inputSymbols, interval='hour', span='wee
     histData = []
     for count, item in enumerate(data):
         if (len(item['historicals']) == 0):
-            print(error_ticker_does_not_exist(symbols[count]), file=get_output())
+            await client.logger.warning(error_ticker_does_not_exist(symbols[count]))
             continue
         stockSymbol = item['symbol']
         for subitem in item['historicals']:
             subitem['symbol'] = stockSymbol
             histData.append(subitem)
 
-    return(filter_data(histData, info))
+    return(await filter_data(client, histData, info))
 
 
 async def get_stock_quote_by_id(client, stock_id, info=None):
@@ -615,7 +614,7 @@ async def get_stock_quote_by_id(client, stock_id, info=None):
     url = marketdata_quotes_url(stock_id)
     data = await request_get(client, url)
 
-    return (filter_data(data, info))
+    return (await filter_data(client, data, info))
 
 
 async def get_stock_quote_by_symbol(client, symbol, info=None):
@@ -664,7 +663,7 @@ async def get_pricebook_by_id(client, stock_id, info=None):
     url = marketdata_pricebook_url(stock_id)
     data = await request_get(client, url)
 
-    return (filter_data(data, info))
+    return (await filter_data(client, data, info))
 
 
 async def get_pricebook_by_symbol(client, symbol, info=None):

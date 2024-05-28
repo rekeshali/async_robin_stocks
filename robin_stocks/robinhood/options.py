@@ -33,7 +33,7 @@ async def get_aggregate_positions(client, info=None, account_number=None):
     """
     url = aggregate_url(account_number=account_number)
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def get_aggregate_open_positions(client, info=None, account_number=None):
@@ -48,7 +48,7 @@ async def get_aggregate_open_positions(client, info=None, account_number=None):
     url = aggregate_url(account_number=account_number)
     payload = {'nonzero': 'True'}
     data = await request_get(client, url, 'pagination', payload)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -64,7 +64,7 @@ async def get_market_options(client, info=None):
     url = option_orders_url()
     data = await request_get(client, url, 'pagination')
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -79,7 +79,7 @@ async def get_all_option_positions(client, info=None, account_number=None):
     """
     url = option_positions_url(account_number=account_number)
     data = await request_get(client, url, 'pagination')
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 @login_required
@@ -98,7 +98,7 @@ async def get_open_option_positions(client, account_number=None, info=None):
     payload = {'nonzero': 'True'}
     data = await request_get(client, url, 'pagination', payload)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_chains(client, symbol, info=None):
@@ -115,13 +115,13 @@ async def get_chains(client, symbol, info=None):
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return None
 
     url = await chains_url(client, symbol)
     data = await request_get(client, url)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def find_tradable_options(client, symbol, expirationDate=None, strikePrice=None, optionType=None, info=None):
@@ -144,12 +144,12 @@ async def find_tradable_options(client, symbol, expirationDate=None, strikePrice
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return [None]
 
     url = option_instruments_url()
     if not await id_for_chain(client, symbol):
-        print("Symbol {} is not valid for finding options.".format(symbol), file=get_output())
+        await client.logger.error("Symbol {} is not valid for finding options.".format(symbol))
         return [None]
 
     payload = {'chain_id': id_for_chain(symbol),
@@ -164,7 +164,7 @@ async def find_tradable_options(client, symbol, expirationDate=None, strikePrice
         payload['type'] = optionType
 
     data = await request_get(client, url, 'pagination', payload)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def find_options_by_expiration(client, inputSymbols, expirationDate, optionType=None, info=None):
@@ -187,7 +187,7 @@ async def find_options_by_expiration(client, inputSymbols, expirationDate, optio
         if optionType:
             optionType = optionType.lower().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return [None]
 
     data = []
@@ -203,7 +203,7 @@ async def find_options_by_expiration(client, inputSymbols, expirationDate, optio
 
         data.extend(filteredOptions)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def find_options_by_strike(client, inputSymbols, strikePrice, optionType=None, info=None):
@@ -226,7 +226,7 @@ async def find_options_by_strike(client, inputSymbols, strikePrice, optionType=N
         if optionType:
             optionType = optionType.lower().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return [None]
 
     data = []
@@ -241,7 +241,7 @@ async def find_options_by_strike(client, inputSymbols, strikePrice, optionType=N
 
         data.extend(filteredOptions)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def find_options_by_expiration_and_strike(client, inputSymbols, expirationDate, strikePrice, optionType=None, info=None):
@@ -266,7 +266,7 @@ async def find_options_by_expiration_and_strike(client, inputSymbols, expiration
         if optionType:
             optionType = optionType.lower().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return [None]
 
     data = []
@@ -282,7 +282,7 @@ async def find_options_by_expiration_and_strike(client, inputSymbols, expiration
 
         data.extend(filteredOptions)
 
-    return filter_data(data, info)
+    return await filter_data(client, data, info)
 
 @login_required
 async def find_options_by_specific_profitability(client, inputSymbols, expirationDate=None, strikePrice=None, optionType=None, typeProfit="chance_of_profit_short", profitFloor=0.0, profitCeiling=1.0, info=None):
@@ -312,7 +312,7 @@ async def find_options_by_specific_profitability(client, inputSymbols, expiratio
     data = []
 
     if (typeProfit != "chance_of_profit_short" and typeProfit != "chance_of_profit_long"):
-        print("Invalid string for 'typeProfit'. Defaulting to 'chance_of_profit_short'.", file=get_output())
+        await client.logger.warning("Invalid string for 'typeProfit'. Defaulting to 'chance_of_profit_short'.")
         typeProfit = "chance_of_profit_short"
 
     for symbol in symbols:
@@ -334,7 +334,7 @@ async def find_options_by_specific_profitability(client, inputSymbols, expiratio
                 except:
                     pass
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def get_option_market_data_by_id(client, id, info=None):
@@ -360,7 +360,7 @@ async def get_option_market_data_by_id(client, id, info=None):
       url = marketdata_options_url()
       data = await request_get(client, url, 'results', payload)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 @login_required
 async def get_option_market_data(client, inputSymbols, expirationDate, strikePrice, optionType, info=None):
@@ -386,7 +386,7 @@ async def get_option_market_data(client, inputSymbols, expirationDate, strikePri
         if optionType:
             optionType = optionType.lower().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return [None]
 
     data = []
@@ -395,7 +395,7 @@ async def get_option_market_data(client, inputSymbols, expirationDate, strikePri
         marketData = await get_option_market_data_by_id(client, optionID)
         data.append(marketData)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_option_instrument_data_by_id(client, id, info=None):
@@ -411,7 +411,7 @@ async def get_option_instrument_data_by_id(client, id, info=None):
     """
     url = option_instruments_url(id)
     data = await request_get(client, url)
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_option_instrument_data(client, symbol, expirationDate, strikePrice, optionType, info=None):
@@ -435,14 +435,14 @@ async def get_option_instrument_data(client, symbol, expirationDate, strikePrice
         symbol = symbol.upper().strip()
         optionType = optionType.lower().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return [None]
 
     optionID = await id_for_option(client, symbol, expirationDate, strikePrice, optionType)
     url = option_instruments_url(optionID)
     data = await request_get(client, url)
 
-    return(filter_data(data, info))
+    return(await filter_data(client, data, info))
 
 
 async def get_option_historicals(client, symbol, expirationDate, strikePrice, optionType, interval='hour', span='week', bounds='regular', info=None):
@@ -473,21 +473,20 @@ async def get_option_historicals(client, symbol, expirationDate, strikePrice, op
         symbol = symbol.upper().strip()
         optionType = optionType.lower().strip()
     except AttributeError as message:
-        print(message, file=get_output())
+        await client.logger.error(message)
         return [None]
 
     interval_check = ['5minute', '10minute', 'hour', 'day', 'week']
     span_check = ['day', 'week', 'year', '5year']
     bounds_check = ['extended', 'regular', 'trading']
     if interval not in interval_check:
-        print(
-            'ERROR: Interval must be "5minute","10minute","hour","day",or "week"', file=get_output())
+        await client.logger.error('Interval must be "5minute","10minute","hour","day",or "week"')
         return([None])
     if span not in span_check:
-        print('ERROR: Span must be "day", "week", "year", or "5year"', file=get_output())
+        await client.logger.error('Span must be "day", "week", "year", or "5year"')
         return([None])
     if bounds not in bounds_check:
-        print('ERROR: Bounds must be "extended","regular",or "trading"', file=get_output())
+        await client.logger.error('Bounds must be "extended","regular",or "trading"')
         return([None])
 
     optionID = await id_for_option(client, symbol, expirationDate, strikePrice, optionType)
@@ -505,4 +504,4 @@ async def get_option_historicals(client, symbol, expirationDate, strikePrice, op
         subitem['symbol'] = symbol
         histData.append(subitem)
 
-    return(filter_data(histData, info))
+    return(await filter_data(client, histData, info))
