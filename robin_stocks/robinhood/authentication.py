@@ -4,6 +4,7 @@ import os
 import pickle
 import random
 import aiofiles
+import asyncio
 
 from robin_stocks.robinhood.helper import *
 from robin_stocks.robinhood.urls import *
@@ -34,7 +35,7 @@ def generate_device_token():
     return(id)
 
 
-async def respond_to_challenge(challenge_id, sms_code):
+async def respond_to_challenge(client, challenge_id, sms_code):
     """This function will post to the challenge url.
 
     :param challenge_id: The challenge id.
@@ -48,10 +49,10 @@ async def respond_to_challenge(challenge_id, sms_code):
     payload = {
         'response': sms_code
     }
-    return(await request_post(url, payload))
+    return(await request_post(client, url, payload))
 
 
-async def login(username=None, password=None, expiresIn=86400, scope='internal', by_sms=True, store_session=True, mfa_code=None, pickle_name=""):
+async def login(client, username=None, password=None, expiresIn=86400, scope='internal', by_sms=True, store_session=True, mfa_code=None, pickle_name=""):
     """This function will effectively log the user into robinhood by getting an
     authentication token and saving it to the session header. By default, it
     will store the authentication token in a pickle file and load that value
@@ -84,7 +85,7 @@ async def login(username=None, password=None, expiresIn=86400, scope='internal',
     home_dir = os.path.expanduser("~")
     data_dir = os.path.join(home_dir, ".tokens")
     # Make directory if it does not exist
-    if not await aiofiles.os.path.exists(data_dir):
+    if not await asyncio.to_thread(os.path.exists, data_dir):
         await aiofiles.os.mkdir(data_dir)
     creds_file = "robinhood" + pickle_name + ".pickle"
     pickle_path = os.path.join(data_dir, creds_file)
@@ -110,7 +111,7 @@ async def login(username=None, password=None, expiresIn=86400, scope='internal',
         payload['mfa_code'] = mfa_code
 
     # If authentication has been stored in pickle file then load it. Stops login server from being pinged so much.
-    if await aiofiles.os.path.exists(pickle_path):
+    if await asyncio.to_thread(os.path.exists, pickle_path):
         # If store_session has been set to false then delete the pickle file, otherwise try to load it.
         # Loading pickle file will fail if the access_token has expired.
         if store_session:
@@ -124,11 +125,11 @@ async def login(username=None, password=None, expiresIn=86400, scope='internal',
                     pickle_device_token = pickle_data['device_token']
                     payload['device_token'] = pickle_device_token
                     # Set login status to True in order to try and get account info.
-                    set_login_state(True)
-                    update_session(
+                    client.set_login_state(True)
+                    client.update_session(
                         'Authorization', '{0} {1}'.format(token_type, access_token))
                     # Try to load account profile to check that authorization token is still valid.
-                    res = await request_get(
+                    res = await request_get(client, 
                         positions_url(), 'pagination', {'nonzero': 'true'}, jsonify_data=False)
                     # Raises exception if response code is not 200.
                     res.raise_for_status()
@@ -138,8 +139,8 @@ async def login(username=None, password=None, expiresIn=86400, scope='internal',
             except:
                 print(
                     "ERROR: There was an issue loading pickle file. Authentication may be expired - logging in normally.", file=get_output())
-                set_login_state(False)
-                update_session('Authorization', None)
+                client.set_login_state(False)
+                client.update_session('Authorization', None)
         else:
             await aiofiles.os.remove(pickle_path)
 
@@ -152,35 +153,35 @@ async def login(username=None, password=None, expiresIn=86400, scope='internal',
         password = getpass.getpass("Robinhood password: ")
         payload['password'] = password
 
-    data = await request_post(url, payload)
+    data = await request_post(client, url, payload)
     # Handle case where mfa or challenge is required.
     if data:
         if 'mfa_required' in data:
             mfa_token = input("Please type in the MFA code: ")
             payload['mfa_code'] = mfa_token
-            res = await request_post(url, payload, jsonify_data=False)
+            res = await request_post(client, url, payload, jsonify_data=False)
             while res.status != 200:
                 mfa_token = input(
                     "That MFA code was not correct. Please type in another MFA code: ")
                 payload['mfa_code'] = mfa_token
-                res = await request_post(url, payload, jsonify_data=False)
+                res = await request_post(client, url, payload, jsonify_data=False)
             data = await res.json()
         elif 'challenge' in data:
             challenge_id = data['challenge']['id']
             sms_code = input('Enter Robinhood code for validation: ')
-            res = await respond_to_challenge(challenge_id, sms_code)
+            res = await respond_to_challenge(client, challenge_id, sms_code)
             while 'challenge' in res and res['challenge']['remaining_attempts'] > 0:
                 sms_code = input('That code was not correct. {0} tries remaining. Please type in another code: '.format(
                     res['challenge']['remaining_attempts']))
-                res = await respond_to_challenge(challenge_id, sms_code)
-            update_session(
+                res = await respond_to_challenge(client, challenge_id, sms_code)
+            client.update_session(
                 'X-ROBINHOOD-CHALLENGE-RESPONSE-ID', challenge_id)
-            data = await request_post(url, payload)
+            data = await request_post(client, url, payload)
         # Update Session data with authorization or raise exception with the information present in data.
         if 'access_token' in data:
             token = '{0} {1}'.format(data['token_type'], data['access_token'])
-            update_session('Authorization', token)
-            set_login_state(True)
+            client.update_session('Authorization', token)
+            client.set_login_state(True)
             data['detail'] = "logged in with brand new authentication code."
             if store_session:
                 async with aiofiles.open(pickle_path, 'wb') as f:
@@ -196,11 +197,12 @@ async def login(username=None, password=None, expiresIn=86400, scope='internal',
 
 
 @login_required
-def logout():
+async def logout(client):
     """Removes authorization from the session header.
 
     :returns: None
 
     """
-    set_login_state(False)
-    update_session('Authorization', None)
+    client.set_login_state(False)
+    client.update_session('Authorization', None)
+    await client.close()
