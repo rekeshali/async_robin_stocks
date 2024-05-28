@@ -370,7 +370,7 @@ async def request_delete(url):
             data = await res.json()
     except Exception as message:
         data = None
-        print(f"Error in request_delete: {message}", file=OUTPUT)
+        print(f"Error in request_delete: {message}", file=get_output())
         
     return data
 
