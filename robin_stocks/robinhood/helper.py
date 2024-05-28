@@ -2,8 +2,8 @@
 """
 from functools import wraps
 
-import requests
-from robin_stocks.robinhood.globals import LOGGED_IN, OUTPUT, SESSION
+import aiohttp
+from robin_stocks.robinhood.globals import LOGGED_IN, OUTPUT, SESSION, HEADERS
 
 
 def set_login_state(logged_in):
@@ -67,52 +67,48 @@ def id_for_stock(symbol):
     return(filter_data(data, 'id'))
 
 
-def id_for_chain(symbol):
-    """Takes a stock ticker and returns the chain id associated with a stocks option.
+async def id_for_chain(symbol):
+    """Takes a stock ticker and returns the chain id associated with a stock's option.
 
     :param symbol: The symbol to get the id for.
     :type symbol: str
-    :returns:  A string that represents the stocks options chain id.
-
+    :returns: A string that represents the stock's options chain id.
     """
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
         print(message, file=get_output())
-        return(None)
+        return None
 
     url = 'https://api.robinhood.com/instruments/'
-
     payload = {'symbol': symbol}
-    data = request_get(url, 'indexzero', payload)
+    data = await request_get(url, 'indexzero', payload)
 
     if data:
-        return(data['tradable_chain_id'])
+        return data['tradable_chain_id']
     else:
-        return(data)
+        return data
 
 
-def id_for_group(symbol):
+async def id_for_group(symbol):
     """Takes a stock ticker and returns the id associated with the group.
 
     :param symbol: The symbol to get the id for.
     :type symbol: str
-    :returns:  A string that represents the stocks group id.
-
+    :returns: A string that represents the stock's group id.
     """
     try:
         symbol = symbol.upper().strip()
     except AttributeError as message:
         print(message, file=get_output())
-        return(None)
+        return None
 
-    url = 'https://api.robinhood.com/options/chains/{0}/'.format(
-        id_for_chain(symbol))
-    data = request_get(url)
-    return(data['underlying_instruments'][0]['id'])
+    url = 'https://api.robinhood.com/options/chains/{0}/'.format(await id_for_chain(symbol))
+    data = await request_get(url)
+    return data['underlying_instruments'][0]['id']
 
 
-def id_for_option(symbol, expirationDate, strike, optionType):
+async def id_for_option(symbol, expirationDate, strike, optionType):
     """Returns the id associated with a specific option order.
 
     :param symbol: The symbol to get the id for.
@@ -123,11 +119,10 @@ def id_for_option(symbol, expirationDate, strike, optionType):
     :type strike: str
     :param optionType: Either call or put.
     :type optionType: str
-    :returns:  A string that represents the stocks option id.
-
+    :returns: A string that represents the stock's option id.
     """ 
     symbol = symbol.upper()
-    chain_id = id_for_chain(symbol)
+    chain_id = await id_for_chain(symbol)
     payload = {
         'chain_id': chain_id,
         'expiration_dates': expirationDate,
@@ -136,14 +131,14 @@ def id_for_option(symbol, expirationDate, strike, optionType):
         'state': 'active'
     }
     url = 'https://api.robinhood.com/options/instruments/'
-    data = request_get(url, 'pagination', payload)
+    data = await request_get(url, 'pagination', payload)
 
     listOfOptions = [item for item in data if item["expiration_date"] == expirationDate]
-    if (len(listOfOptions) == 0):
+    if len(listOfOptions) == 0:
         print('Getting the option ID failed. Perhaps the expiration date is wrong format, or the strike price is wrong.', file=get_output())
-        return(None)
+        return None
 
-    return(listOfOptions[0]['id'])
+    return listOfOptions[0]['id']
 
 
 def round_price(price):
@@ -230,25 +225,24 @@ def inputs_to_set(inputSymbols):
     return(symbols_list)
 
 
-def request_document(url, payload=None):
-    """Using a document url, makes a get request and returnes the session data.
+async def request_document(url, payload=None):
+    """Using a document url, makes a get request and returns the session data.
 
     :param url: The url to send a get request to.
     :type url: str
-    :returns: Returns the session.get() data as opppose to session.get().json() data.
-
-    """ 
+    :returns: Returns the session.get() data as opposed to session.get().json() data.
+    """
     try:
-        res = SESSION.get(url, params=payload)
-        res.raise_for_status()
-    except requests.exceptions.HTTPError as message:
+        async with SESSION.get(url, params=payload, headers=HEADERS) as res:
+            res.raise_for_status()
+    except aiohttp.ClientResponseError as message:
         print(message, file=get_output())
-        return(None)
+        return None
 
-    return(res)
+    return res
 
 
-def request_get(url, dataType='regular', payload=None, jsonify_data=True):
+async def request_get(url, dataType='regular', payload=None, jsonify_data=True):
     """For a given url and payload, makes a get request and returns the data.
 
     :param url: The url to send a get request to.
@@ -263,7 +257,6 @@ def request_get(url, dataType='regular', payload=None, jsonify_data=True):
     :type jsonify_data: bool
     :returns: Returns the data from the get request. If jsonify_data=True and requests returns an http code other than <200> \
     then either '[None]' or 'None' will be returned based on what the dataType parameter was set as.
-
     """
     if (dataType == 'results' or dataType == 'pagination'):
         data = [None]
@@ -272,16 +265,17 @@ def request_get(url, dataType='regular', payload=None, jsonify_data=True):
     res = None
     if jsonify_data:
         try:
-            res = SESSION.get(url, params=payload)
-            res.raise_for_status()
-            data = res.json()
-        except (requests.exceptions.HTTPError, AttributeError) as message:
+            async with SESSION.get(url, params=payload, headers=HEADERS) as res:
+                res.raise_for_status()
+                data = await res.json()
+        except (aiohttp.ClientResponseError, AttributeError) as message:
             print(message, file=get_output())
             return(data)
     else:
-        res = SESSION.get(url, params=payload)
-        return(res)
-    # Only continue to filter data if jsonify_data=True, and Session.get returned status code <200>.
+        async with SESSION.get(url, params=payload, headers=HEADERS) as res:
+            return res
+
+    # Only continue to filter data if jsonify_data=True, and SESSION.get returned status code <200>.
     if (dataType == 'results'):
         try:
             data = data['results']
@@ -301,9 +295,9 @@ def request_get(url, dataType='regular', payload=None, jsonify_data=True):
             print('Found Additional pages.', file=get_output())
         while nextData['next']:
             try:
-                res = SESSION.get(nextData['next'])
-                res.raise_for_status()
-                nextData = res.json()
+                async with SESSION.get(nextData['next'], headers=HEADERS) as res:
+                    res.raise_for_status()
+                    nextData = await res.json()
             except:
                 print('Additional pages exist but could not be loaded.', file=get_output())
                 return(data)
@@ -323,7 +317,7 @@ def request_get(url, dataType='regular', payload=None, jsonify_data=True):
     return(data)
 
 
-def request_post(url, payload=None, timeout=16, json=False, jsonify_data=True):
+async def request_post(url, payload=None, timeout=16, json=False, jsonify_data=True):
     """For a given url and payload, makes a post request and returns the response. Allows for responses other than 200.
 
     :param url: The url to send a post request to.
@@ -344,24 +338,26 @@ def request_post(url, payload=None, timeout=16, json=False, jsonify_data=True):
     try:
         if json:
             update_session('Content-Type', 'application/json')
-            res = SESSION.post(url, json=payload, timeout=timeout)
-            update_session(
-                'Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
+            async with SESSION.post(url, json=payload, timeout=timeout, headers=HEADERS) as res:
+                update_session('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
         else:
-            res = SESSION.post(url, data=payload, timeout=timeout)
-        if res.status_code not in [200, 201, 202, 204, 301, 302, 303, 304, 307, 400, 401, 402, 403]:
-            raise Exception("Received "+ str(res.status_code))
-        data = res.json()
+            async with SESSION.post(url, data=payload, timeout=timeout, headers=HEADERS) as res:
+                pass
+            
+        if res.status not in [200, 201, 202, 204, 301, 302, 303, 304, 307, 400, 401, 402, 403]:
+            raise Exception("Received " + str(res.status))
+        data = await res.json()
     except Exception as message:
         print("Error in request_post: {0}".format(message), file=get_output())
+        
     if jsonify_data:
-        return(data)
+        return data
     else:
-        return(res)
+        return res
 
 
-def request_delete(url):
-    """For a given url and payload, makes a delete request and returns the response.
+async def request_delete(url):
+    """For a given url, makes a delete request and returns the response.
 
     :param url: The url to send a delete request to.
     :type url: str
@@ -369,27 +365,26 @@ def request_delete(url):
 
     """
     try:
-        res = SESSION.delete(url)
-        res.raise_for_status()
-        data = res
+        async with SESSION.delete(url, headers=HEADERS) as res:
+            res.raise_for_status()
+            data = await res.json()
     except Exception as message:
         data = None
-        print("Error in request_delete: {0}".format(message), file=get_output())
+        print(f"Error in request_delete: {message}", file=OUTPUT)
         
-    return(data)
+    return data
 
 
 def update_session(key, value):
-    """Updates the session header used by the requests library.
+    """Updates the session header used by the aiohttp library.
 
     :param key: The key value to update or add to session header.
     :type key: str
     :param value: The value that corresponds to the key.
     :type value: str
     :returns: None. Updates the session header with a value.
-
     """
-    SESSION.headers[key] = value
+    HEADERS[key] = value
 
 
 def error_argument_not_key_in_dictionary(keyword):
