@@ -7,7 +7,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='async_robin_stocks',
-      version='3.1.30',
+      version='3.2.31',
       description='An asynchronous fork of the popular Python wrapper around the Robinhood API originally written by Josh Fernandes',
       long_description=long_description,
       long_description_content_type='text/x-rst',

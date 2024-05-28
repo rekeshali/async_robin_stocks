@@ -335,13 +335,15 @@ async def request_post(client, url, payload=None, timeout=16, json=False, jsonif
             client.update_session('Content-Type', 'application/json')
             async with client.SESSION.post(url, json=payload, timeout=timeout, headers=client.HEADERS) as res:
                 client.update_session('Content-Type', 'application/x-www-form-urlencoded; charset=utf-8')
+                if res.status not in [200, 201, 202, 204, 301, 302, 303, 304, 307, 400, 401, 402, 403]:
+                    raise Exception("Received " + str(res.status))
+                data = await res.json()     
         else:
             async with client.SESSION.post(url, data=payload, timeout=timeout, headers=client.HEADERS) as res:
-                pass
-            
-        if res.status not in [200, 201, 202, 204, 301, 302, 303, 304, 307, 400, 401, 402, 403]:
-            raise Exception("Received " + str(res.status))
-        data = await res.json()
+                if res.status not in [200, 201, 202, 204, 301, 302, 303, 304, 307, 400, 401, 402, 403]:
+                    raise Exception("Received " + str(res.status))
+                data = await res.json()            
+
     except Exception as message:
         print("Error in request_post: {0}".format(message), file=get_output())
         
