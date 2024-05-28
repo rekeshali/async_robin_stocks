@@ -52,7 +52,7 @@ Here is an example that gets data from multiple user accounts concurrently:
 
 Also see "examples/robinhood examples/get_option_historicals.py" for another working example.
 
-NOTE: I'm a big fan of this library thanks all who have worked on this. 
+NOTE: I'm a big fan of this library thanks all who have worked on this. I'm surprised an async version of this didn't exist yet.
 
 WARNING: THIS LIBRARY IS NOT FULLY TESTED USE AT YOUR OWN RISK.
 
