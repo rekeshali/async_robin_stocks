@@ -89,7 +89,7 @@ class LogFormatter(Formatter):
         message = record.msg
         return f"[{log_level}] {message}"
 
-class AsyncIORobinStocksClient:
+class AsyncRobinStocksClient:
     LOGGED_IN = False
 
     # Initial headers for the session

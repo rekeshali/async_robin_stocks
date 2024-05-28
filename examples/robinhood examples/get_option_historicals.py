@@ -1,4 +1,4 @@
-from async_robin_stocks.robinhood import AsyncIORobinStocksClient
+from async_robin_stocks.robinhood import AsyncRobinStocksClient
 import matplotlib.pyplot as plt
 import datetime as dt
 import asyncio
@@ -26,7 +26,7 @@ async def get_historical_options_data():
     logger = Logger(name="custom-logger")
     file_handler = AsyncFileHandler(filename='historical_options.log')
     logger.add_handler(file_handler)
-    r = AsyncIORobinStocksClient(logger=logger)
+    r = AsyncRobinStocksClient(logger=logger)
     try:
         await r.login(username, password, pickle_name="creds")
         await r.logger.info('Logged in!')

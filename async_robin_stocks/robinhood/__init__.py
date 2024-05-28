@@ -1,1 +1,1 @@
-from .client import AsyncIORobinStocksClient
+from .client import AsyncRobinStocksClient
