@@ -23,7 +23,7 @@ Here is an example that gets data from multiple user accounts concurrently:
 
     import asyncio
     import logging
-    from async_robin_stocks.robinhood import AsyncIORobinStocksClient
+    from async_robin_stocks.robinhood import AsyncRobinStocksClient
     from async_robin_stocks.robinhood.helper import requests_get
 
     async def len_open_positions(user):
